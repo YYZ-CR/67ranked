@@ -40,6 +40,7 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [finalScore, setFinalScore] = useState<number>(0);
   const [scoreId, setScoreId] = useState<string | null>(null);
+  const [displayRepCount, setDisplayRepCount] = useState<number>(0);
   
   // Container size for responsive canvas
   const [containerSize, setContainerSize] = useState(400);
@@ -205,6 +206,7 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
     // Reset the tracker's internal rep counter
     trackerRef.current?.resetRepCounter();
     repCountRef.current = 0;
+    setDisplayRepCount(0);
     setTimeRemaining(is67RepsMode(duration) ? 0 : duration);
     setElapsedTime(0);
     gameStartTimeRef.current = performance.now();
@@ -216,8 +218,8 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
     const gameLoop = () => {
       const elapsed = performance.now() - gameStartTimeRef.current;
       
+      // Always update elapsed time for 67 reps mode
       if (is67Reps) {
-        // 67 reps mode: timer counts UP
         setElapsedTime(elapsed);
       } else {
         // Timed mode: timer counts DOWN
@@ -228,7 +230,10 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
       // Process reps - the tracker handles everything internally with pose data
       if (trackerRef.current) {
         trackerRef.current.processGameplay(null, null);
-        repCountRef.current = trackerRef.current.getRepCount();
+        const currentReps = trackerRef.current.getRepCount();
+        repCountRef.current = currentReps;
+        // Update display state for UI
+        setDisplayRepCount(currentReps);
       }
       
       // Check end conditions
@@ -419,7 +424,7 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
 
         {gameState === 'playing' && (
           <GameOverlay
-            repCount={repCountRef.current}
+            repCount={displayRepCount}
             timeRemaining={timeRemaining}
             elapsedTime={elapsedTime}
             is67RepsMode={is67RepsMode(duration)}
