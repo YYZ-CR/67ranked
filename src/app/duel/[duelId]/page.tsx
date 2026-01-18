@@ -55,6 +55,7 @@ export default function DuelPage() {
   const [result, setResult] = useState<{ myScore: number; opponentScore: number; outcome: string } | null>(null);
   const [shareUrl, setShareUrl] = useState('');
   const [copied, setCopied] = useState(false);
+  const [displayRepCount, setDisplayRepCount] = useState(0);
 
   // Keep duel ref in sync
   useEffect(() => {
@@ -198,7 +199,8 @@ export default function DuelPage() {
       cancelAnimationFrame(animationFrameRef.current);
     }
 
-    const score = repCounterRef.current?.getRepCount() || 0;
+    // Use the tracker's internal rep count
+    const score = trackerRef.current?.getRepCount() || repCountRef.current || 0;
     setFinalScore(score);
 
     if (sessionTokenRef.current) {
@@ -233,8 +235,10 @@ export default function DuelPage() {
     const currentDuel = duelDataRef.current;
     if (!currentDuel) return;
 
-    repCounterRef.current?.reset();
+    // Reset using the tracker's internal rep counter
+    trackerRef.current?.resetRepCounter();
     repCountRef.current = 0;
+    setDisplayRepCount(0);
     setTimeRemaining(currentDuel.duration_ms);
     setPageState('playing');
 
@@ -246,26 +250,12 @@ export default function DuelPage() {
       const remaining = Math.max(0, durationMs - elapsed);
       setTimeRemaining(remaining);
 
-      if (trackerRef.current && repCounterRef.current) {
-        const results = trackerRef.current.getLastResults();
-        if (results?.multiHandLandmarks && results?.multiHandedness) {
-          let leftLandmarks = null;
-          let rightLandmarks = null;
-
-          for (let i = 0; i < results.multiHandLandmarks.length; i++) {
-            const landmarks = results.multiHandLandmarks[i];
-            const handedness = results.multiHandedness[i];
-            const isLeftHand = handedness.label === 'Right';
-
-            if (isLeftHand) leftLandmarks = landmarks;
-            else rightLandmarks = landmarks;
-          }
-
-          const repCompleted = repCounterRef.current.processFrame(leftLandmarks, rightLandmarks);
-          if (repCompleted) {
-            repCountRef.current = repCounterRef.current.getRepCount();
-          }
-        }
+      // Use the tracker's built-in pose-based rep counting
+      if (trackerRef.current) {
+        trackerRef.current.processGameplay(null, null);
+        const currentReps = trackerRef.current.getRepCount();
+        repCountRef.current = currentReps;
+        setDisplayRepCount(currentReps);
       }
 
       if (remaining > 0) {
@@ -533,9 +523,14 @@ export default function DuelPage() {
   }
 
   // Game states (calibrating, countdown, playing, results)
+  const containerSize = 400;
+  
   return (
     <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
-      <div className="relative w-full max-w-md aspect-square rounded-2xl overflow-hidden bg-gray-900">
+      <div 
+        className="relative rounded-2xl overflow-hidden bg-gray-900 ring-2 ring-accent-green/30 shadow-[0_0_30px_rgba(74,222,128,0.15)]"
+        style={{ width: containerSize, height: containerSize }}
+      >
         <video
           ref={videoRef}
           autoPlay
@@ -546,7 +541,9 @@ export default function DuelPage() {
         />
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 w-full h-full object-cover"
+          width={containerSize}
+          height={containerSize}
+          className="absolute inset-0 w-full h-full"
         />
 
         {pageState === 'calibrating' && calibrationTrackerRef.current && (
@@ -562,7 +559,7 @@ export default function DuelPage() {
 
         {pageState === 'playing' && (
           <GameOverlay
-            repCount={repCountRef.current}
+            repCount={displayRepCount}
             timeRemaining={timeRemaining}
             trackingLost={trackingLost}
           />

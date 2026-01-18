@@ -94,7 +94,8 @@ export default function ChallengePage() {
       cancelAnimationFrame(animationFrameRef.current);
     }
 
-    const score = repCounterRef.current?.getRepCount() || 0;
+    // Use the tracker's internal rep count
+    const score = trackerRef.current?.getRepCount() || repCountRef.current || 0;
     setFinalScore(score);
 
     if (sessionTokenRef.current) {
@@ -129,7 +130,8 @@ export default function ChallengePage() {
   const startGameplay = useCallback(() => {
     if (!challenge) return;
 
-    repCounterRef.current?.reset();
+    // Reset using the tracker's internal rep counter
+    trackerRef.current?.resetRepCounter();
     repCountRef.current = 0;
     setTimeRemaining(challenge.duration_ms);
     setPageState('playing');
@@ -142,26 +144,10 @@ export default function ChallengePage() {
       const remaining = Math.max(0, durationMs - elapsed);
       setTimeRemaining(remaining);
 
-      if (trackerRef.current && repCounterRef.current) {
-        const results = trackerRef.current.getLastResults();
-        if (results?.multiHandLandmarks && results?.multiHandedness) {
-          let leftLandmarks = null;
-          let rightLandmarks = null;
-
-          for (let i = 0; i < results.multiHandLandmarks.length; i++) {
-            const landmarks = results.multiHandLandmarks[i];
-            const handedness = results.multiHandedness[i];
-            const isLeftHand = handedness.label === 'Right';
-
-            if (isLeftHand) leftLandmarks = landmarks;
-            else rightLandmarks = landmarks;
-          }
-
-          const repCompleted = repCounterRef.current.processFrame(leftLandmarks, rightLandmarks);
-          if (repCompleted) {
-            repCountRef.current = repCounterRef.current.getRepCount();
-          }
-        }
+      // Use the tracker's built-in pose-based rep counting
+      if (trackerRef.current) {
+        trackerRef.current.processGameplay(null, null);
+        repCountRef.current = trackerRef.current.getRepCount();
       }
 
       if (remaining > 0) {
@@ -481,9 +467,14 @@ export default function ChallengePage() {
   }
 
   // Game states
+  const containerSize = 400;
+  
   return (
     <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
-      <div className="relative w-full max-w-md aspect-square rounded-2xl overflow-hidden bg-gray-900">
+      <div 
+        className="relative rounded-2xl overflow-hidden bg-gray-900 ring-2 ring-accent-green/30 shadow-[0_0_30px_rgba(74,222,128,0.15)]"
+        style={{ width: containerSize, height: containerSize }}
+      >
         <video
           ref={videoRef}
           autoPlay
@@ -494,7 +485,9 @@ export default function ChallengePage() {
         />
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 w-full h-full object-cover"
+          width={containerSize}
+          height={containerSize}
+          className="absolute inset-0 w-full h-full"
         />
 
         {pageState === 'calibrating' && calibrationTrackerRef.current && (
