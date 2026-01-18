@@ -28,6 +28,7 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
   const gameEndedRef = useRef<boolean>(false);
   const finishTimeRef = useRef<number>(0);
   const gameModeRef = useRef<{ is67Reps: boolean; duration: number }>({ is67Reps: false, duration: 0 });
+  const selectedDurationRef = useRef<number>(DURATION_6_7S); // Store selected duration immediately
   
   // State
   const [gameState, setGameState] = useState<GameState>('idle');
@@ -145,6 +146,7 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
   const handleModeSelect = async (mode: GameMode, selectedDuration: number) => {
     setGameMode(mode);
     setDuration(selectedDuration);
+    selectedDurationRef.current = selectedDuration; // Store immediately in ref
     
     // For duel/challenge modes, we'd redirect to their respective pages
     // For now, only normal mode is handled here
@@ -213,11 +215,13 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
     gameEndedRef.current = false;
     finishTimeRef.current = 0;
     
-    const is67Reps = is67RepsMode(duration);
-    const gameDuration = is67Reps ? 0 : duration;
+    // Use the ref value (set immediately when user selected) to avoid state timing issues
+    const actualDuration = selectedDurationRef.current;
+    const is67Reps = is67RepsMode(actualDuration);
+    const gameDuration = is67Reps ? 0 : actualDuration;
     
     // Store in ref to avoid stale closure issues
-    gameModeRef.current = { is67Reps, duration };
+    gameModeRef.current = { is67Reps, duration: actualDuration };
     
     setTimeRemaining(gameDuration);
     setElapsedTime(0);
@@ -250,22 +254,23 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
         const currentReps = trackerRef.current.getRepCount();
         repCountRef.current = currentReps;
         setDisplayRepCount(currentReps);
-        
-        // In 67 reps mode, check if we hit 67
-        if (currentIs67Reps && currentReps >= 67) {
-          finishTimeRef.current = elapsed;
-          gameEndedRef.current = true;
-          endGame(elapsed, true); // Pass flag indicating 67 reps mode
-          return;
-        }
       }
       
-      // Check end conditions for timed modes
-      if (!currentIs67Reps) {
-        const remaining = Math.max(0, currentDuration - elapsed);
+      // Check end conditions based on mode
+      if (currentIs67Reps) {
+        // 67 reps mode: end when we hit 67 reps
+        if (repCountRef.current >= 67) {
+          finishTimeRef.current = elapsed;
+          gameEndedRef.current = true;
+          endGame(elapsed, true);
+          return;
+        }
+      } else {
+        // Timed mode: end ONLY when time runs out (not based on reps)
+        const remaining = currentDuration - elapsed;
         if (remaining <= 0) {
           gameEndedRef.current = true;
-          endGame(undefined, false); // Pass flag indicating timed mode
+          endGame(undefined, false);
           return;
         }
       }
