@@ -44,7 +44,7 @@ export function StartScreen({ onStart, error, onRetry }: StartScreenProps) {
           <h1 className="text-4xl font-black text-white">RANKED</h1>
         </div>
         <p className="text-white/60 mb-8 text-sm">
-          Move your hands to compete globally
+          How fast can you 67?
         </p>
         
         {/* Start button */}
