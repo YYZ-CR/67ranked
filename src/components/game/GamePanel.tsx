@@ -25,6 +25,8 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
   const gameStartTimeRef = useRef<number>(0);
   const repCountRef = useRef<number>(0);
   const sessionTokenRef = useRef<string | null>(null);
+  const gameEndedRef = useRef<boolean>(false);
+  const finishTimeRef = useRef<number>(0);
   
   // State
   const [gameState, setGameState] = useState<GameState>('idle');
@@ -207,6 +209,8 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
     trackerRef.current?.resetRepCounter();
     repCountRef.current = 0;
     setDisplayRepCount(0);
+    gameEndedRef.current = false;
+    finishTimeRef.current = 0;
     
     const is67Reps = is67RepsMode(duration);
     const gameDuration = is67Reps ? 0 : duration;
@@ -218,35 +222,45 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
     
     // Start game loop
     const gameLoop = () => {
+      // If game already ended, don't process anything more
+      if (gameEndedRef.current) {
+        return;
+      }
+      
       const elapsed = performance.now() - gameStartTimeRef.current;
       
-      // Always update both time values
+      // Update time display
       setElapsedTime(elapsed);
       if (!is67Reps) {
         const remaining = Math.max(0, gameDuration - elapsed);
         setTimeRemaining(remaining);
       }
       
-      // Process reps - the tracker handles everything internally with pose data
-      if (trackerRef.current) {
+      // Process reps - but stop counting once we hit 67 in that mode
+      if (trackerRef.current && !(is67Reps && repCountRef.current >= 67)) {
         trackerRef.current.processGameplay(null, null);
         const currentReps = trackerRef.current.getRepCount();
-        repCountRef.current = currentReps;
-        // Update display state for UI
-        setDisplayRepCount(currentReps);
-      }
-      
-      // Check end conditions
-      if (is67Reps) {
-        // 67 reps mode: end when we hit 67 reps
-        if (repCountRef.current >= 67) {
+        
+        // In 67 reps mode, cap at exactly 67
+        if (is67Reps && currentReps >= 67) {
+          repCountRef.current = 67;
+          setDisplayRepCount(67);
+          // Capture the exact finish time
+          finishTimeRef.current = elapsed;
+          gameEndedRef.current = true;
           endGame(elapsed);
           return;
+        } else {
+          repCountRef.current = currentReps;
+          setDisplayRepCount(currentReps);
         }
-      } else {
-        // Timed mode: end when time runs out
+      }
+      
+      // Check end conditions for timed modes
+      if (!is67Reps) {
         const remaining = Math.max(0, gameDuration - elapsed);
         if (remaining <= 0) {
+          gameEndedRef.current = true;
           endGame();
           return;
         }
