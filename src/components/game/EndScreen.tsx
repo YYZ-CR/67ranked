@@ -19,20 +19,20 @@ interface EndScreenProps {
 
 // Icons
 const RefreshIcon = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M1 4v6h6M23 20v-6h-6" strokeLinecap="round" strokeLinejoin="round" />
     <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
 const ShareIcon = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
 const CheckIcon = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
     <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
@@ -120,42 +120,42 @@ export function EndScreen({
   };
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm p-2 z-50">
-      <div className="glass-panel rounded-xl w-full max-w-sm animate-scale-in overflow-hidden">
+    <div className="absolute inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm p-1.5 sm:p-2 z-50">
+      <div className="glass-panel rounded-lg sm:rounded-xl w-full max-w-xs sm:max-w-sm animate-scale-in overflow-hidden">
         {/* Header */}
-        <div className="px-4 py-2 border-b border-white/5 flex items-center justify-between">
-          <span className="text-[10px] font-mono text-accent-green uppercase tracking-wider">
+        <div className="px-3 py-1.5 sm:px-4 sm:py-2 border-b border-white/5 flex items-center justify-between">
+          <span className="text-[9px] sm:text-[10px] font-mono text-accent-green uppercase tracking-wider">
             Complete
           </span>
-          <span className="text-[10px] font-mono text-white/30 uppercase">
+          <span className="text-[9px] sm:text-[10px] font-mono text-white/30 uppercase">
             {formatDuration(duration)}
           </span>
         </div>
 
-        <div className="p-4">
+        <div className="p-3 sm:p-4">
           {/* Score display */}
-          <div className="text-center mb-4">
+          <div className="text-center mb-3 sm:mb-4">
             {is67Reps ? (
               <>
-                <span className="score-display text-5xl sm:text-6xl text-accent-green">
+                <span className="score-display text-4xl sm:text-5xl text-accent-green">
                   {formatElapsedTime(elapsedTime || 0)}
                 </span>
-                <span className="text-xl text-white/30 ml-1">s</span>
+                <span className="text-base sm:text-xl text-white/30 ml-1">s</span>
               </>
             ) : (
               <>
-                <span className="score-display text-5xl sm:text-6xl text-white">
+                <span className="score-display text-4xl sm:text-5xl text-white">
                   {result.myScore}
                 </span>
-                <span className="text-lg text-white/30 ml-1">reps</span>
+                <span className="text-sm sm:text-lg text-white/30 ml-1">reps</span>
               </>
             )}
           </div>
 
           {/* Duel result */}
           {(mode === 'duel' || mode === 'challenge') && result.opponentScore !== undefined && (
-            <div className="mb-4 p-3 rounded-lg bg-white/5 border border-white/10">
-              <div className="flex items-center justify-between text-xs">
+            <div className="mb-3 p-2 sm:p-3 rounded-md sm:rounded-lg bg-white/5 border border-white/10">
+              <div className="flex items-center justify-between text-[10px] sm:text-xs">
                 <span className="text-white/40">vs {result.opponentUsername}</span>
                 <span className={`font-bold ${
                   result.outcome === 'win' ? 'text-accent-green' : 
@@ -164,46 +164,46 @@ export function EndScreen({
                   {result.outcome === 'win' ? 'WIN' : result.outcome === 'lose' ? 'LOSS' : 'TIE'}
                 </span>
               </div>
-              <div className="flex items-center justify-between mt-2">
-                <span className="text-lg font-bold text-white">{result.myScore}</span>
+              <div className="flex items-center justify-between mt-1.5 sm:mt-2">
+                <span className="text-base sm:text-lg font-bold text-white">{result.myScore}</span>
                 <span className="text-white/20">—</span>
-                <span className="text-lg font-bold text-white">{result.opponentScore}</span>
+                <span className="text-base sm:text-lg font-bold text-white">{result.opponentScore}</span>
               </div>
             </div>
           )}
 
           {/* Submitted badge */}
           {isSubmitted && (
-            <div className="mb-3 flex items-center justify-center gap-1.5 py-2 px-3 bg-accent-green/10 rounded-lg">
+            <div className="mb-2.5 sm:mb-3 flex items-center justify-center gap-1.5 py-1.5 sm:py-2 px-2 sm:px-3 bg-accent-green/10 rounded-md sm:rounded-lg">
               <CheckIcon />
-              <span className="text-xs text-accent-green font-medium">Saved</span>
+              <span className="text-[10px] sm:text-xs text-accent-green font-medium">Saved</span>
             </div>
           )}
 
           {/* Username input */}
           {canSubmitToLeaderboard && !isSubmitted && (
-            <div className="mb-3">
+            <div className="mb-2.5 sm:mb-3">
               <input
                 type="text"
                 value={username}
                 onChange={(e) => handleUsernameChange(e.target.value)}
                 placeholder="Your name"
                 maxLength={20}
-                className="w-full rounded-lg px-3 py-2 text-white text-center text-sm"
+                className="w-full rounded-md sm:rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2 text-white text-center text-xs sm:text-sm"
               />
               {(validationError || submitError) && (
-                <p className="text-red-400 text-[10px] mt-1 text-center">{validationError || submitError}</p>
+                <p className="text-red-400 text-[9px] sm:text-[10px] mt-1 text-center">{validationError || submitError}</p>
               )}
             </div>
           )}
 
           {/* Action buttons */}
-          <div className="space-y-2">
+          <div className="space-y-1.5 sm:space-y-2">
             {canSubmitToLeaderboard && !isSubmitted && (
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting || !username}
-                className={`w-full py-2.5 px-4 rounded-lg font-semibold text-sm bg-accent-green text-black transition-all ${
+                className={`w-full py-2 sm:py-2.5 px-3 sm:px-4 rounded-md sm:rounded-lg font-semibold text-xs sm:text-sm bg-accent-green text-black transition-all ${
                   (isSubmitting || !username) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent-green-dark'
                 }`}
               >
@@ -211,17 +211,17 @@ export function EndScreen({
               </button>
             )}
 
-            <div className="flex gap-2">
+            <div className="flex gap-1.5 sm:gap-2">
               <button 
                 onClick={onPlayAgain} 
-                className="flex-1 py-2 px-3 rounded-lg text-sm font-medium text-white/70 bg-white/5 hover:bg-white/10 transition-all flex items-center justify-center gap-1.5"
+                className="flex-1 py-1.5 sm:py-2 px-2 sm:px-3 rounded-md sm:rounded-lg text-[10px] sm:text-sm font-medium text-white/70 bg-white/5 hover:bg-white/10 transition-all flex items-center justify-center gap-1 sm:gap-1.5"
               >
                 <RefreshIcon />
                 Again
               </button>
               <button 
                 onClick={handleShare} 
-                className="flex-1 py-2 px-3 rounded-lg text-sm font-medium text-white/70 bg-white/5 hover:bg-white/10 transition-all flex items-center justify-center gap-1.5"
+                className="flex-1 py-1.5 sm:py-2 px-2 sm:px-3 rounded-md sm:rounded-lg text-[10px] sm:text-sm font-medium text-white/70 bg-white/5 hover:bg-white/10 transition-all flex items-center justify-center gap-1 sm:gap-1.5"
               >
                 <ShareIcon />
                 Share
@@ -231,7 +231,7 @@ export function EndScreen({
             {onRematch && (
               <button 
                 onClick={onRematch} 
-                className="w-full py-2 px-3 rounded-lg text-sm font-medium text-white/70 bg-white/5 hover:bg-white/10 transition-all flex items-center justify-center gap-1.5"
+                className="w-full py-1.5 sm:py-2 px-2 sm:px-3 rounded-md sm:rounded-lg text-[10px] sm:text-sm font-medium text-white/70 bg-white/5 hover:bg-white/10 transition-all flex items-center justify-center gap-1 sm:gap-1.5"
               >
                 <RefreshIcon />
                 Rematch

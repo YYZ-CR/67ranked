@@ -16,7 +16,7 @@ export function CountdownOverlay({ value }: CountdownOverlayProps) {
       >
         <span 
           className={`
-            text-9xl font-black
+            text-6xl sm:text-8xl lg:text-9xl font-black
             ${value === 0 ? 'text-accent-green' : 'text-white'}
           `}
           style={{
@@ -31,7 +31,7 @@ export function CountdownOverlay({ value }: CountdownOverlayProps) {
       </div>
       
       {/* Progress bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
+      <div className="absolute bottom-0 left-0 right-0 h-0.5 sm:h-1 bg-white/10">
         <div 
           className="h-full bg-accent-green transition-all duration-1000 ease-linear"
           style={{ width: `${((4 - value) / 4) * 100}%` }}

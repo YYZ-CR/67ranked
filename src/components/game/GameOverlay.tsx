@@ -34,14 +34,14 @@ export function GameOverlay({
   return (
     <div className="absolute inset-0 pointer-events-none flex flex-col">
       {/* Top bar with rep counter */}
-      <div className="flex justify-center pt-4">
-        <div className="glass-panel px-6 py-3 rounded-full flex items-center gap-2">
-          <span className={`text-4xl font-bold tabular-nums ${
+      <div className="flex justify-center pt-2 sm:pt-4">
+        <div className="glass-panel px-4 sm:px-6 py-2 sm:py-3 rounded-full flex items-center gap-1.5 sm:gap-2">
+          <span className={`text-2xl sm:text-4xl font-bold tabular-nums ${
             is67RepsMode && repCount >= 60 ? 'text-accent-green' : 'text-white'
           }`} style={{ fontStyle: 'italic' }}>
             {repCount}
           </span>
-          <span className="text-lg text-white/40 font-mono">
+          <span className="text-sm sm:text-lg text-white/40 font-mono">
             {is67RepsMode ? '/ 67' : 'reps'}
           </span>
         </div>
@@ -49,13 +49,13 @@ export function GameOverlay({
 
       {/* Center warning */}
       {(trackingLost || showWarning) ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="glass-panel-warning px-6 py-4 rounded-xl">
-            <div className="flex items-center gap-3">
-              <svg className="w-6 h-6 text-yellow-400" viewBox="0 0 24 24" fill="currentColor">
+        <div className="flex-1 flex items-center justify-center px-2">
+          <div className="glass-panel-warning px-4 sm:px-6 py-2.5 sm:py-4 rounded-lg sm:rounded-xl">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2L1 21h22L12 2zm0 3.99L19.53 19H4.47L12 5.99zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/>
               </svg>
-              <p className="text-yellow-300 text-lg font-semibold">
+              <p className="text-yellow-300 text-sm sm:text-lg font-semibold">
                 {trackingLost ? 'Hands not detected' : warningMessage}
               </p>
             </div>
@@ -63,11 +63,11 @@ export function GameOverlay({
         </div>
       ) : isNearFinish ? (
         <div className="flex-1 flex items-center justify-center">
-          <div className="glass-panel px-8 py-4 rounded-xl border border-accent-green/30">
-            <p className="text-accent-green text-3xl font-bold text-center tabular-nums" style={{ fontStyle: 'italic' }}>
+          <div className="glass-panel px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl border border-accent-green/30">
+            <p className="text-accent-green text-2xl sm:text-3xl font-bold text-center tabular-nums" style={{ fontStyle: 'italic' }}>
               {repsToGo}
             </p>
-            <p className="text-accent-green/60 text-sm text-center font-mono uppercase tracking-wider">
+            <p className="text-accent-green/60 text-xs sm:text-sm text-center font-mono uppercase tracking-wider">
               to go
             </p>
           </div>
@@ -77,12 +77,12 @@ export function GameOverlay({
       )}
 
       {/* Bottom timer bar */}
-      <div className="flex justify-center pb-4">
-        <div className="glass-panel px-8 py-3 rounded-full flex items-center gap-2">
-          <span className="text-3xl font-bold text-white tabular-nums" style={{ fontStyle: 'italic' }}>
+      <div className="flex justify-center pb-2 sm:pb-4">
+        <div className="glass-panel px-5 sm:px-8 py-2 sm:py-3 rounded-full flex items-center gap-1.5 sm:gap-2">
+          <span className="text-2xl sm:text-3xl font-bold text-white tabular-nums" style={{ fontStyle: 'italic' }}>
             {is67RepsMode ? formatSpeedrunTime(displayTime) : formatTime(displayTime)}
           </span>
-          <span className="text-lg text-white/40">s</span>
+          <span className="text-sm sm:text-lg text-white/40">s</span>
         </div>
       </div>
     </div>
