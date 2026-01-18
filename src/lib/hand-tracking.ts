@@ -350,78 +350,62 @@ export class HandTracker {
     
     const ctx = this.canvasCtx;
     
-    // Arm connections: shoulder -> elbow -> wrist
-    const connections = [
-      [LEFT_SHOULDER, LEFT_ELBOW],
-      [LEFT_ELBOW, LEFT_WRIST],
-      [RIGHT_SHOULDER, RIGHT_ELBOW],
-      [RIGHT_ELBOW, RIGHT_WRIST],
-    ];
-    
-    // Draw connections
-    ctx.lineWidth = 4;
-    
-    for (const [startIdx, endIdx] of connections) {
-      const start = landmarks[startIdx];
-      const end = landmarks[endIdx];
-      
-      if ((start?.visibility ?? 0) < MIN_VISIBILITY || (end?.visibility ?? 0) < MIN_VISIBILITY) {
-        continue;
-      }
-      
-      const isLeft = startIdx === LEFT_SHOULDER || startIdx === LEFT_ELBOW;
-      ctx.strokeStyle = isLeft ? 'rgba(74, 222, 128, 0.8)' : 'rgba(96, 165, 250, 0.8)';
-      
-      // Mirror X coordinate
-      const x1 = width - start.x * width;
-      const y1 = start.y * height;
-      const x2 = width - end.x * width;
-      const y2 = end.y * height;
-      
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
-    }
-    
-    // Draw wrist markers (the main tracking points)
+    // Get wrist positions
     const leftWrist = landmarks[LEFT_WRIST];
     const rightWrist = landmarks[RIGHT_WRIST];
     
+    // Draw "6" on left hand (green)
     if ((leftWrist?.visibility ?? 0) > MIN_VISIBILITY) {
       const x = width - leftWrist.x * width;
       const y = leftWrist.y * height;
       
-      ctx.fillStyle = '#4ade80';
-      ctx.strokeStyle = 'white';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(x, y, 15, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.stroke();
-      
-      ctx.fillStyle = 'white';
-      ctx.font = 'bold 16px sans-serif';
+      // Draw large "6" with glow effect
+      ctx.save();
+      ctx.font = 'bold 72px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('L', x, y + 6);
+      ctx.textBaseline = 'middle';
+      
+      // Glow effect
+      ctx.shadowColor = '#4ade80';
+      ctx.shadowBlur = 20;
+      
+      // Stroke outline
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.lineWidth = 6;
+      ctx.strokeText('6', x, y);
+      
+      // Fill with green
+      ctx.fillStyle = '#4ade80';
+      ctx.fillText('6', x, y);
+      
+      ctx.restore();
     }
     
+    // Draw "7" on right hand (green)
     if ((rightWrist?.visibility ?? 0) > MIN_VISIBILITY) {
       const x = width - rightWrist.x * width;
       const y = rightWrist.y * height;
       
-      ctx.fillStyle = '#60a5fa';
-      ctx.strokeStyle = 'white';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(x, y, 15, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.stroke();
-      
-      ctx.fillStyle = 'white';
-      ctx.font = 'bold 16px sans-serif';
+      // Draw large "7" with glow effect
+      ctx.save();
+      ctx.font = 'bold 72px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('R', x, y + 6);
+      ctx.textBaseline = 'middle';
+      
+      // Glow effect
+      ctx.shadowColor = '#4ade80';
+      ctx.shadowBlur = 20;
+      
+      // Stroke outline
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.lineWidth = 6;
+      ctx.strokeText('7', x, y);
+      
+      // Fill with green
+      ctx.fillStyle = '#4ade80';
+      ctx.fillText('7', x, y);
+      
+      ctx.restore();
     }
   }
   
