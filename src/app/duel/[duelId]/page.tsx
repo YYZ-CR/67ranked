@@ -94,8 +94,6 @@ export default function DuelPage() {
   const [displayRepCount, setDisplayRepCount] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
   const gameEndedRef = useRef(false);
-  
-  // Container size for responsive canvas (same as normal mode)
   const [containerSize, setContainerSize] = useState(400);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -458,14 +456,14 @@ export default function DuelPage() {
     }
   }, [pageState, trackingState, startCountdown]);
 
-  // Update container size on resize - same logic as normal mode
+  // Update container size on resize
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
         const parent = containerRef.current.parentElement;
         if (parent) {
-          const width = parent.clientWidth - 8; // minimal padding
-          const height = parent.clientHeight - 8;
+          const width = parent.clientWidth - 32; // Account for padding
+          const height = parent.clientHeight - 32;
           // Use the smaller dimension to keep square
           // Max 400px on mobile (<640px), 550px on larger screens
           const isMobile = window.innerWidth < 640;
@@ -478,7 +476,6 @@ export default function DuelPage() {
     
     updateSize();
     window.addEventListener('resize', updateSize);
-    // Small delay to ensure parent is sized
     const timeout = setTimeout(updateSize, 100);
     return () => {
       window.removeEventListener('resize', updateSize);
@@ -675,6 +672,7 @@ export default function DuelPage() {
   }
 
   // Game states (calibrating, countdown, playing, results)
+  
   return (
     <main className="min-h-screen bg-bg-primary bg-grid-pattern bg-gradient-radial">
       <Header showNav={false} />

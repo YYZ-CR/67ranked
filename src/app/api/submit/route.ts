@@ -92,41 +92,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to save score' }, { status: 500 });
     }
 
-    // Calculate rank and percentile
-    const is67Reps = is67RepsMode(payload.duration_ms);
-    
-    // Get total count of scores for this duration
-    const { count: totalCount } = await supabase
-      .from('scores')
-      .select('*', { count: 'exact', head: true })
-      .eq('duration_ms', payload.duration_ms);
-
-    // Get count of scores better than this one
-    // For 67 reps: lower score is better (score < this score)
-    // For timed modes: higher score is better (score > this score)
-    const { count: betterCount } = is67Reps
-      ? await supabase
-          .from('scores')
-          .select('*', { count: 'exact', head: true })
-          .eq('duration_ms', payload.duration_ms)
-          .lt('score', score)
-      : await supabase
-          .from('scores')
-          .select('*', { count: 'exact', head: true })
-          .eq('duration_ms', payload.duration_ms)
-          .gt('score', score);
-
-    const rank = (betterCount || 0) + 1;
-    const total = totalCount || 1;
-    const percentile = total > 1 
-      ? Math.round(((total - rank) / (total - 1)) * 100)
-      : 100;
-
-    return NextResponse.json({ 
-      scoreId: data.id,
-      rank,
-      percentile
-    });
+    return NextResponse.json({ scoreId: data.id });
   } catch (error) {
     console.error('Submit error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
