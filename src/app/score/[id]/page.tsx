@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { DURATION_6_7S, DURATION_20S, DURATION_67_REPS, is67RepsMode } from '@/types/game';
+import { Header } from '@/components/ui/Header';
 
 interface ScoreData {
   id: string;
@@ -14,6 +15,54 @@ interface ScoreData {
   rank?: number;
   totalPlayers?: number;
 }
+
+// Icons
+const PlayIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M8 5v14l11-7z" />
+  </svg>
+);
+
+const ShareIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const HomeIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <polyline points="9 22 9 12 15 12 15 22" />
+  </svg>
+);
+
+const CopyIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  </svg>
+);
+
+const BoltIcon = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z" />
+  </svg>
+);
+
+const TimerIcon = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="13" r="7" />
+    <path d="M12 10v3l1.5 1.5" strokeLinecap="round" />
+  </svg>
+);
+
+const TargetIcon = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="8" />
+    <circle cx="12" cy="12" r="4" />
+    <circle cx="12" cy="12" r="1" fill="currentColor" />
+  </svg>
+);
 
 export default function ScorePage() {
   const params = useParams();
@@ -28,9 +77,7 @@ export default function ScorePage() {
     const fetchScore = async () => {
       try {
         const response = await fetch(`/api/score/${scoreId}`);
-        if (!response.ok) {
-          throw new Error('Score not found');
-        }
+        if (!response.ok) throw new Error('Score not found');
         const data = await response.json();
         setScoreData(data);
       } catch (err) {
@@ -39,31 +86,28 @@ export default function ScorePage() {
         setLoading(false);
       }
     };
-
     fetchScore();
   }, [scoreId]);
 
   const formatDuration = (ms: number) => {
-    if (ms === DURATION_6_7S) return '6.7S SPRINT';
-    if (ms === DURATION_20S) return '20S ENDURANCE';
-    if (ms === DURATION_67_REPS) return '67 REPS';
-    return `${(ms / 1000).toFixed(1)}S`;
+    if (ms === DURATION_6_7S) return '6.7s Sprint';
+    if (ms === DURATION_20S) return '20s Endurance';
+    if (ms === DURATION_67_REPS) return '67 Reps';
+    return `${(ms / 1000).toFixed(1)}s`;
   };
 
   const formatScore = (score: number, duration: number) => {
-    if (is67RepsMode(duration)) {
-      return (score / 1000).toFixed(2);
-    }
-    return score.toLocaleString();
+    if (is67RepsMode(duration)) return (score / 1000).toFixed(2);
+    return score.toString();
   };
 
   const getShareText = () => {
     if (!scoreData) return '';
     const is67Reps = is67RepsMode(scoreData.duration_ms);
     if (is67Reps) {
-      return `${scoreData.username} got 67 reps in ${(scoreData.score / 1000).toFixed(2)}s on 67ranked.com. Can you beat their score?`;
+      return `${scoreData.username} got 67 reps in ${(scoreData.score / 1000).toFixed(2)}s on 67ranked.com. Can you beat that?`;
     }
-    return `${scoreData.username} scored ${scoreData.score} reps on 67ranked.com. Can you beat their score?`;
+    return `${scoreData.username} scored ${scoreData.score} reps on 67ranked.com. Can you beat that?`;
   };
 
   const handleShare = async () => {
@@ -72,14 +116,8 @@ export default function ScorePage() {
 
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: '67Ranked Score',
-          text: shareText,
-          url: shareUrl
-        });
-      } catch {
-        // User cancelled
-      }
+        await navigator.share({ title: '67Ranked', text: shareText, url: shareUrl });
+      } catch { /* cancelled */ }
     } else {
       await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
       setCopied(true);
@@ -95,13 +133,10 @@ export default function ScorePage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center">
-        <div className="flex items-center gap-3 text-white/30">
-          <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10" strokeOpacity="0.3" />
-            <path d="M12 2a10 10 0 0110 10" />
-          </svg>
-          <span className="text-sm tracking-wider">LOADING SCORE DATA...</span>
+      <main className="min-h-screen bg-bg-primary bg-grid-pattern bg-gradient-radial flex items-center justify-center">
+        <div className="flex items-center gap-2 text-white/40">
+          <div className="w-5 h-5 border-2 border-white/20 border-t-accent-green rounded-full animate-spin" />
+          <span className="font-mono text-sm uppercase tracking-wider">Loading...</span>
         </div>
       </main>
     );
@@ -109,25 +144,20 @@ export default function ScorePage() {
 
   if (error || !scoreData) {
     return (
-      <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
-        <div className="bg-bg-secondary border border-white/10 p-8 rounded-2xl text-center max-w-md">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center">
-            <svg className="w-8 h-8 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M15 9l-6 6M9 9l6 6" />
-            </svg>
+      <main className="min-h-screen bg-bg-primary bg-grid-pattern bg-gradient-radial">
+        <Header />
+        <div className="min-h-screen flex items-center justify-center p-4 pt-20">
+          <div className="glass-panel p-8 rounded-2xl text-center max-w-md animate-fade-in">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+              <TargetIcon />
+            </div>
+            <h2 className="text-xl font-bold text-white mb-2">Score Not Found</h2>
+            <p className="text-white/50 mb-6">This score may have been removed or the link is invalid.</p>
+            <Link href="/" className="btn-primary w-full">
+              <PlayIcon />
+              Play 67Ranked
+            </Link>
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">SCORE NOT FOUND</h2>
-          <p className="text-white/50 mb-6 text-sm">This score may have been removed or the link is invalid.</p>
-          <Link 
-            href="/"
-            className="inline-flex items-center justify-center gap-2 bg-accent-green text-black px-8 py-3 rounded-xl font-bold hover:bg-accent-green/90 transition-all"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M8 5v14l11-7z"/>
-            </svg>
-            PLAY 67RANKED
-          </Link>
         </div>
       </main>
     );
@@ -138,113 +168,102 @@ export default function ScorePage() {
     ? Math.round((1 - (scoreData.rank / scoreData.totalPlayers)) * 100)
     : null;
 
+  const getModeIcon = () => {
+    if (scoreData.duration_ms === DURATION_6_7S) return <BoltIcon />;
+    if (scoreData.duration_ms === DURATION_20S) return <TimerIcon />;
+    if (scoreData.duration_ms === DURATION_67_REPS) return <TargetIcon />;
+    return <TimerIcon />;
+  };
+
   return (
-    <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Score Card */}
-        <div className="bg-bg-secondary border border-white/10 rounded-2xl overflow-hidden mb-4">
-          {/* Header */}
-          <div className="bg-white/5 border-b border-white/10 px-6 py-4 flex items-center justify-between">
-            <h1 className="text-lg font-bold text-white tracking-wide">SCORE CARD</h1>
-            <span className="px-3 py-1 bg-accent-green/20 text-accent-green text-xs font-semibold rounded-full tracking-wider">
-              {formatDuration(scoreData.duration_ms)}
-            </span>
-          </div>
-
-          <div className="p-6">
-            {/* Player Info */}
-            <div className="text-center mb-6">
-              <p className="text-white/50 text-xs uppercase tracking-wider mb-1">PLAYER</p>
-              <p className="text-2xl font-bold text-white">{scoreData.username}</p>
-            </div>
-
-            {/* Score Display */}
-            <div className="bg-accent-green/10 border border-accent-green/30 rounded-xl p-6 text-center mb-6">
-              <p className="text-white/50 text-xs uppercase tracking-wider mb-2">
-                {is67Reps ? 'TIME' : 'SCORE'}
-              </p>
-              <p className="text-6xl font-black text-accent-green font-mono">
-                {formatScore(scoreData.score, scoreData.duration_ms)}
-              </p>
-              <p className="text-white/30 text-sm mt-1">
-                {is67Reps ? 'seconds' : 'reps'}
-              </p>
-            </div>
-
-            {/* Stats */}
-            {scoreData.rank && (
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                  <p className="text-white/40 text-xs uppercase tracking-wider mb-1">GLOBAL RANK</p>
-                  <p className="text-2xl font-bold text-white">#{scoreData.rank}</p>
-                </div>
-                {percentile !== null && (
-                  <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                    <p className="text-white/40 text-xs uppercase tracking-wider mb-1">PERCENTILE</p>
-                    <p className="text-2xl font-bold text-accent-green">Top {100 - percentile}%</p>
-                  </div>
-                )}
+    <main className="min-h-screen bg-bg-primary bg-grid-pattern bg-gradient-radial">
+      <Header />
+      
+      <div className="min-h-screen flex items-center justify-center p-4 pt-20">
+        <div className="w-full max-w-lg animate-fade-in">
+          {/* Score Card */}
+          <div className="glass-panel rounded-2xl overflow-hidden">
+            {/* Header bar */}
+            <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {getModeIcon()}
+                <span className="text-xs font-mono text-accent-green uppercase tracking-wider">
+                  {formatDuration(scoreData.duration_ms)}
+                </span>
               </div>
-            )}
-
-            {/* Date */}
-            <div className="text-center">
-              <p className="text-white/20 text-xs">
+              <span className="text-xs font-mono text-white/30 uppercase tracking-wider">
                 {new Date(scoreData.created_at).toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
                   year: 'numeric'
                 })}
-              </p>
+              </span>
+            </div>
+
+            {/* Main score display */}
+            <div className="p-8 lg:p-10 text-center">
+              {/* Username */}
+              <p className="text-label mb-2">{scoreData.username}</p>
+              
+              {/* Score */}
+              <div className="mb-4">
+                <span className="score-display text-7xl lg:text-8xl text-accent-green">
+                  {formatScore(scoreData.score, scoreData.duration_ms)}
+                </span>
+                <span className="text-2xl text-white/30 ml-2">
+                  {is67Reps ? 's' : 'reps'}
+                </span>
+              </div>
+
+              {/* Rank info */}
+              {scoreData.rank && (
+                <div className="inline-flex items-center gap-3 px-4 py-2 bg-white/[0.02] border border-white/5 rounded-full">
+                  <span className="text-white/40 text-sm">Global Rank</span>
+                  <span className="text-white font-bold">#{scoreData.rank}</span>
+                  {percentile !== null && (
+                    <>
+                      <span className="w-px h-4 bg-white/10"></span>
+                      <span className="text-accent-green text-sm font-semibold">Top {100 - percentile}%</span>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="divider"></div>
+
+            {/* Actions */}
+            <div className="p-6 space-y-2">
+              {/* Primary CTA */}
+              <Link href="/" className="btn-primary w-full text-lg py-4">
+                <PlayIcon />
+                Beat {scoreData.username}&apos;s Score
+              </Link>
+
+              {/* Secondary actions */}
+              <div className="flex gap-2">
+                <button onClick={handleShare} className="btn-secondary flex-1">
+                  <ShareIcon />
+                  Share
+                </button>
+                <button onClick={handleCopyLink} className="btn-secondary flex-1">
+                  <CopyIcon />
+                  {copied ? 'Copied!' : 'Copy Link'}
+                </button>
+              </div>
+
+              <Link href="/" className="btn-secondary w-full">
+                <HomeIcon />
+                Home
+              </Link>
             </div>
           </div>
-        </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col gap-2">
-          <Link
-            href="/"
-            className="w-full bg-accent-green text-black py-4 rounded-xl font-bold text-sm tracking-wide hover:bg-accent-green/90 transition-all flex items-center justify-center gap-2"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M8 5v14l11-7z"/>
-            </svg>
-            BEAT {scoreData.username.toUpperCase()}&apos;S SCORE
-          </Link>
-
-          <div className="flex gap-2">
-            <button
-              onClick={handleShare}
-              className="flex-1 bg-white/5 border border-white/10 text-white py-3 rounded-xl font-semibold hover:bg-white/10 transition-all flex items-center justify-center gap-2 text-sm"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />
-              </svg>
-              SHARE
-            </button>
-            <button
-              onClick={handleCopyLink}
-              className="flex-1 bg-white/5 border border-white/10 text-white py-3 rounded-xl font-semibold hover:bg-white/10 transition-all flex items-center justify-center gap-2 text-sm"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-              </svg>
-              {copied ? 'COPIED!' : 'COPY'}
-            </button>
+          {/* Footer */}
+          <div className="text-center mt-6">
+            <p className="text-white/20 text-xs font-mono uppercase tracking-wider">67ranked.com</p>
           </div>
-
-          <Link
-            href="/"
-            className="w-full bg-white/5 border border-white/10 text-white/70 py-3 rounded-xl font-semibold hover:bg-white/10 transition-all text-center text-sm"
-          >
-            BACK TO HOME
-          </Link>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-6">
-          <p className="text-white/20 text-xs tracking-wider">67RANKED.COM</p>
         </div>
       </div>
     </main>

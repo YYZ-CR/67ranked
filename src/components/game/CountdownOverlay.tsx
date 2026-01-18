@@ -8,7 +8,7 @@ export function CountdownOverlay({ value }: CountdownOverlayProps) {
   const displayValue = value === 0 ? 'GO!' : value.toString();
   
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+    <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm">
       {/* Use key to force re-render and restart CSS animation */}
       <div 
         key={value}
@@ -20,17 +20,18 @@ export function CountdownOverlay({ value }: CountdownOverlayProps) {
             ${value === 0 ? 'text-accent-green' : 'text-white'}
           `}
           style={{
+            fontStyle: 'italic',
             textShadow: value === 0 
-              ? '0 0 60px rgba(74, 222, 128, 0.8)' 
-              : '0 0 40px rgba(255, 255, 255, 0.4)'
+              ? '0 0 80px rgba(74, 222, 128, 0.6)' 
+              : '0 0 60px rgba(255, 255, 255, 0.3)'
           }}
         >
           {displayValue}
         </span>
       </div>
       
-      {/* Bottom progress bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-2 bg-white/20">
+      {/* Progress bar */}
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
         <div 
           className="h-full bg-accent-green transition-all duration-1000 ease-linear"
           style={{ width: `${((4 - value) / 4) * 100}%` }}

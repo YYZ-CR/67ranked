@@ -3,6 +3,42 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DURATION_6_7S, DURATION_20S, DURATION_67_REPS, MIN_CUSTOM_DURATION, MAX_CUSTOM_DURATION, is67RepsMode } from '@/types/game';
+import { Header } from '@/components/ui/Header';
+
+// Icons
+const BoltIcon = () => (
+  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z" />
+  </svg>
+);
+
+const TimerIcon = () => (
+  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <circle cx="12" cy="13" r="7" />
+    <path d="M12 10v3l1.5 1.5" strokeLinecap="round" />
+    <path d="M10 2h4" strokeLinecap="round" />
+  </svg>
+);
+
+const TargetIcon = () => (
+  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <circle cx="12" cy="12" r="8" />
+    <circle cx="12" cy="12" r="4" />
+    <circle cx="12" cy="12" r="1" fill="currentColor" />
+  </svg>
+);
+
+const CustomIcon = () => (
+  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6l2.1 2.1M5.6 18.4l2.1-2.1m8.6-8.6l2.1-2.1" strokeLinecap="round" />
+  </svg>
+);
+
+const ArrowLeftIcon = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
 export default function CreateDuelPage() {
   const router = useRouter();
@@ -66,192 +102,154 @@ export default function CreateDuelPage() {
     }
   };
 
-  const getDurationLabel = (ms: number) => {
-    if (ms === DURATION_6_7S) return 'SPRINT';
-    if (ms === DURATION_20S) return 'ENDURANCE';
-    if (is67RepsMode(ms)) return 'REPS';
-    return 'CUSTOM';
-  };
+  const protocols = [
+    { id: DURATION_6_7S, title: '6.7s', subtitle: 'Sprint', icon: BoltIcon },
+    { id: DURATION_20S, title: '20s', subtitle: 'Endurance', icon: TimerIcon },
+    { id: DURATION_67_REPS, title: '67', subtitle: 'Reps', icon: TargetIcon },
+  ];
 
   return (
-    <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
-      <div className="bg-bg-secondary border border-white/10 rounded-2xl max-w-md w-full overflow-hidden">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
-          <button
-            onClick={() => router.push('/')}
-            className="text-white/50 hover:text-white text-sm flex items-center gap-2 transition-colors"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-            BACK TO HOME
-          </button>
-          <div className="flex items-center gap-2 text-accent-green text-xs font-semibold">
-            <span className="w-2 h-2 rounded-full bg-accent-green animate-pulse"></span>
-            SYSTEM ONLINE
-          </div>
-        </div>
-
-        <div className="p-8">
-          {/* Title */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-black text-white italic tracking-tight mb-2">
-              CREATE A DUEL
-            </h1>
-            <p className="text-white/30 text-sm tracking-wider">
-              INITIALIZATION PROTOCOL 67.4
-            </p>
+    <main className="min-h-screen bg-bg-primary bg-grid-pattern bg-gradient-radial">
+      <Header />
+      
+      <div className="min-h-screen flex items-center justify-center p-4 pt-20">
+        <div className="glass-panel rounded-2xl w-full max-w-lg animate-fade-in">
+          {/* Header */}
+          <div className="p-6 border-b border-white/5 flex items-center justify-between">
+            <button
+              onClick={() => router.push('/')}
+              className="text-white/40 hover:text-white transition-colors flex items-center gap-1.5 text-sm"
+            >
+              <ArrowLeftIcon />
+              <span>Back</span>
+            </button>
+            <div className="flex items-center gap-1.5">
+              <span className="status-dot"></span>
+              <span className="text-xs font-mono text-accent-green uppercase tracking-wider">System Online</span>
+            </div>
           </div>
 
-          {/* Username Input */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-2 h-2 rounded-full bg-accent-green/50"></span>
-              <span className="text-white/50 text-xs uppercase tracking-wider">OPERATOR IDENTIFICATION</span>
-            </div>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="ENTER YOUR CODENAME (E.G. NEO_67)"
-              maxLength={20}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-4 text-white font-mono placeholder:text-white/20 focus:border-accent-green transition-colors"
-            />
-          </div>
-
-          {/* Duration Selection */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="w-2 h-2 rounded-full bg-accent-green/50"></span>
-              <span className="text-white/50 text-xs uppercase tracking-wider">SELECT DUEL PROTOCOL</span>
-            </div>
-            <div className="grid grid-cols-4 gap-2">
-              <button
-                onClick={() => handleDurationSelect(DURATION_6_7S)}
-                className={`
-                  py-4 rounded-lg border transition-all flex flex-col items-center gap-1
-                  ${duration === DURATION_6_7S && !showCustom
-                    ? 'bg-accent-green/10 border-accent-green text-accent-green'
-                    : 'bg-white/5 border-white/10 text-white/70 hover:border-white/30'
-                  }
-                `}
-              >
-                <span className="text-xl font-bold">6.7<span className="text-sm">s</span></span>
-                <span className="text-xs tracking-wider opacity-60">SPRINT</span>
-              </button>
-              <button
-                onClick={() => handleDurationSelect(DURATION_20S)}
-                className={`
-                  py-4 rounded-lg border transition-all flex flex-col items-center gap-1
-                  ${duration === DURATION_20S && !showCustom
-                    ? 'bg-accent-green/10 border-accent-green text-accent-green'
-                    : 'bg-white/5 border-white/10 text-white/70 hover:border-white/30'
-                  }
-                `}
-              >
-                <span className="text-xl font-bold">20<span className="text-sm">s</span></span>
-                <span className="text-xs tracking-wider opacity-60">ENDURANCE</span>
-              </button>
-              <button
-                onClick={() => handleDurationSelect(DURATION_67_REPS)}
-                className={`
-                  py-4 rounded-lg border transition-all flex flex-col items-center gap-1
-                  ${is67RepsMode(duration) && !showCustom
-                    ? 'bg-accent-green/10 border-accent-green text-accent-green'
-                    : 'bg-white/5 border-white/10 text-white/70 hover:border-white/30'
-                  }
-                `}
-              >
-                <span className="text-xl font-bold">67</span>
-                <span className="text-xs tracking-wider opacity-60">REPS</span>
-              </button>
-              <button
-                onClick={handleCustomToggle}
-                className={`
-                  py-4 rounded-lg border transition-all flex flex-col items-center gap-1
-                  ${showCustom
-                    ? 'bg-accent-green/10 border-accent-green text-accent-green'
-                    : 'bg-white/5 border-white/10 text-white/70 hover:border-white/30'
-                  }
-                `}
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M12 1v4M12 19v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M1 12h4M19 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-                </svg>
-                <span className="text-xs tracking-wider opacity-60">CUSTOM</span>
-              </button>
+          {/* Content */}
+          <div className="p-6 lg:p-8">
+            {/* Title */}
+            <div className="text-center mb-8">
+              <h1 className="text-3xl lg:text-4xl font-black text-white tracking-tight mb-2" style={{ fontStyle: 'italic' }}>
+                CREATE A DUEL
+              </h1>
+              <p className="text-white/30 text-xs font-mono uppercase tracking-wider">
+                Initialization Protocol 67.4
+              </p>
             </div>
 
-            {showCustom && (
-              <div className="mt-3 flex items-center gap-2">
-                <input
-                  type="number"
-                  value={customSeconds}
-                  onChange={(e) => handleCustomChange(e.target.value)}
-                  min={5}
-                  max={120}
-                  step="0.1"
-                  className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-center font-mono focus:border-accent-green transition-colors"
-                />
-                <span className="text-white/50 text-sm">seconds</span>
+            {/* Username */}
+            <div className="mb-8">
+              <label className="text-label block mb-2">
+                <span className="status-dot inline-block mr-1.5"></span>
+                Operator Identification
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter your codename (e.g. NEO_67)"
+                maxLength={20}
+                className="w-full rounded-lg px-4 py-4 text-white placeholder:text-white/20 font-mono uppercase tracking-wider"
+              />
+            </div>
+
+            {/* Protocol Selection */}
+            <div className="mb-8">
+              <label className="text-label block mb-3">
+                <span className="status-dot inline-block mr-1.5"></span>
+                Select Duel Protocol
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {protocols.map(({ id, title, subtitle, icon: Icon }) => {
+                  const isSelected = duration === id && !showCustom;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => handleDurationSelect(id)}
+                      className={`p-4 rounded-xl text-center transition-all ${
+                        isSelected ? 'card-selected' : 'card'
+                      }`}
+                    >
+                      <div className={`w-full flex justify-center mb-2 ${isSelected ? 'text-accent-green' : 'text-white/40'}`}>
+                        <Icon />
+                      </div>
+                      <p className={`text-xl font-bold ${isSelected ? 'text-white' : 'text-white/70'}`}>{title}</p>
+                      <p className="text-xs text-white/30 uppercase tracking-wider">{subtitle}</p>
+                    </button>
+                  );
+                })}
+                <button
+                  onClick={handleCustomToggle}
+                  className={`p-4 rounded-xl text-center transition-all ${
+                    showCustom ? 'card-selected' : 'card'
+                  }`}
+                >
+                  <div className={`w-full flex justify-center mb-2 ${showCustom ? 'text-accent-green' : 'text-white/40'}`}>
+                    <CustomIcon />
+                  </div>
+                  <p className={`text-lg font-bold ${showCustom ? 'text-white' : 'text-white/70'}`}>Custom</p>
+                  <p className="text-xs text-white/30 uppercase tracking-wider">5-120s</p>
+                </button>
               </div>
-            )}
-          </div>
 
-          {error && (
-            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-              <p className="text-red-400 text-sm text-center">{error}</p>
+              {showCustom && (
+                <div className="mt-4 flex items-center gap-3">
+                  <input
+                    type="number"
+                    value={customSeconds}
+                    onChange={(e) => handleCustomChange(e.target.value)}
+                    min={5}
+                    max={120}
+                    step="0.1"
+                    className="flex-1 rounded-lg px-4 py-3 text-white text-center font-mono"
+                  />
+                  <span className="text-white/40 text-sm">seconds</span>
+                </div>
+              )}
             </div>
-          )}
 
-          {/* Create Button */}
-          <button
-            onClick={handleCreate}
-            disabled={isCreating || !username.trim()}
-            className={`
-              w-full py-4 rounded-xl font-bold text-sm tracking-wide transition-all flex items-center justify-center gap-3
-              ${isCreating || !username.trim()
-                ? 'bg-white/5 text-white/30 cursor-not-allowed border border-white/5'
-                : 'bg-accent-green text-black hover:bg-accent-green/90'
-              }
-            `}
-          >
-            {isCreating ? (
-              <>
-                <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" strokeOpacity="0.3" />
-                  <path d="M12 2a10 10 0 0110 10" />
-                </svg>
-                INITIALIZING...
-              </>
-            ) : (
-              <>
-                CREATE DUEL PROTOCOL
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.96 17.55 11 21 11 21z"/>
-                </svg>
-              </>
+            {error && (
+              <p className="text-red-400 text-sm text-center mb-4">{error}</p>
             )}
-          </button>
 
-          {/* Info */}
-          <div className="mt-4 p-3 bg-white/5 border border-white/5 rounded-lg flex items-start gap-3">
-            <svg className="w-5 h-5 text-white/30 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 16v-4M12 8h.01" />
-            </svg>
-            <p className="text-white/30 text-xs leading-relaxed">
-              UPON INITIALIZATION, A HIGH-SECURITY ACCESS LINK WILL BE GENERATED. DISPATCH THIS LINK TO YOUR OPPONENT TO BEGIN THE SYNCHRONIZATION.
-            </p>
+            {/* Create Button */}
+            <button
+              onClick={handleCreate}
+              disabled={isCreating || !username.trim()}
+              className={`btn-primary w-full text-lg py-5 ${(isCreating || !username.trim()) ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {isCreating ? 'Initializing...' : 'Create Duel Protocol'}
+              {!isCreating && (
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z" />
+                </svg>
+              )}
+            </button>
+
+            {/* Info */}
+            <div className="mt-6 p-4 rounded-lg bg-white/[0.02] border border-white/5">
+              <p className="text-white/30 text-xs flex items-start gap-2">
+                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 16v-4M12 8h.01" strokeLinecap="round" />
+                </svg>
+                <span>
+                  Upon initialization, a high-security access link will be generated. 
+                  Dispatch this link to your opponent to begin the synchronization.
+                </span>
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="px-6 py-3 border-t border-white/5 flex items-center justify-between text-white/20 text-xs">
-          <span>STATUS: AWAITING OPERATOR INPUT</span>
-          <span>VERSION 1.0.67-BETA</span>
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-white/5 flex items-center justify-between">
+            <span className="text-xs text-white/20 font-mono uppercase tracking-wider">Status: Awaiting Operator Input</span>
+            <span className="text-xs text-white/20 font-mono">v1.0.67-beta</span>
+          </div>
         </div>
       </div>
     </main>

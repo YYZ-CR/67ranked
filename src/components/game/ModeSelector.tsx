@@ -8,45 +8,40 @@ interface ModeSelectorProps {
   onCancel: () => void;
 }
 
-// Mode card data
-const DURATION_CARDS = [
-  {
-    duration: DURATION_6_7S,
-    title: '6.7s Sprint',
-    description: 'Maximum reps in 6.7 seconds. Every millisecond counts.',
-    category: 'SPEED',
-    icon: (
-      <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.96 17.55 11 21 11 21z"/>
-      </svg>
-    ),
-  },
-  {
-    duration: DURATION_20S,
-    title: '20s Endurance',
-    description: 'Sustained output over time. Maintain your tempo.',
-    category: 'STAMINA',
-    icon: (
-      <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="12" cy="12" r="10" />
-        <polyline points="12 6 12 12 16 14" />
-      </svg>
-    ),
-  },
-  {
-    duration: DURATION_67_REPS,
-    title: '67 Reps',
-    description: 'Race to complete 67 reps. Fastest time wins.',
-    category: 'PRECISION',
-    icon: (
-      <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="12" cy="12" r="10" />
-        <circle cx="12" cy="12" r="6" />
-        <circle cx="12" cy="12" r="2" fill="currentColor" />
-      </svg>
-    ),
-  },
-];
+// Icons
+const BoltIcon = () => (
+  <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z" />
+  </svg>
+);
+
+const TimerIcon = () => (
+  <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <circle cx="12" cy="13" r="8" />
+    <path d="M12 9v4l2 2" strokeLinecap="round" />
+    <path d="M9 2h6" strokeLinecap="round" />
+  </svg>
+);
+
+const TargetIcon = () => (
+  <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <circle cx="12" cy="12" r="9" />
+    <circle cx="12" cy="12" r="5" />
+    <circle cx="12" cy="12" r="1" fill="currentColor" />
+  </svg>
+);
+
+const CustomIcon = () => (
+  <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6l2.1 2.1M5.6 18.4l2.1-2.1m8.6-8.6l2.1-2.1" strokeLinecap="round" />
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+  </svg>
+);
 
 export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
   const [mode, setMode] = useState<GameMode>('normal');
@@ -96,159 +91,178 @@ export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
 
   const isValidDuration = duration === DURATION_67_REPS || (duration >= MIN_CUSTOM_DURATION && duration <= MAX_CUSTOM_DURATION);
 
+  const modes = [
+    { 
+      id: DURATION_6_7S, 
+      title: '6.7s Sprint', 
+      desc: 'Maximum reps in 6.7 seconds. Pure speed.', 
+      tag: 'FASTEST',
+      icon: BoltIcon 
+    },
+    { 
+      id: DURATION_20S, 
+      title: '20s Endurance', 
+      desc: 'Maintain tempo over time. Consistency wins.', 
+      tag: 'STAMINA',
+      icon: TimerIcon 
+    },
+    { 
+      id: DURATION_67_REPS, 
+      title: '67 Reps', 
+      desc: 'Race to complete 67 reps. Best time wins.', 
+      tag: 'PRECISION',
+      icon: TargetIcon 
+    },
+  ];
+
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="bg-bg-secondary border border-white/10 rounded-2xl p-8 max-w-3xl w-full mx-4 animate-scale-in">
+    <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 z-50 animate-fade-in">
+      <div className="glass-panel rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <h2 className="text-2xl font-bold text-white text-center mb-2 tracking-wide">
-          SELECT MODE
-        </h2>
-        
-        {/* Solo/Duel Toggle */}
-        <div className="flex justify-center mb-8">
-          <div className="inline-flex bg-white/5 rounded-full p-1">
-            <button
-              onClick={() => setMode('normal')}
-              className={`
-                px-8 py-2 rounded-full text-sm font-semibold transition-all
-                ${mode === 'normal' 
-                  ? 'bg-accent-green text-black' 
-                  : 'text-white/60 hover:text-white'
-                }
-              `}
-            >
-              SOLO
-            </button>
-            <button
-              onClick={() => setMode('duel')}
-              className={`
-                px-8 py-2 rounded-full text-sm font-semibold transition-all
-                ${mode === 'duel' 
-                  ? 'bg-accent-green text-black' 
-                  : 'text-white/60 hover:text-white'
-                }
-              `}
-            >
-              DUEL
-            </button>
+        <div className="p-6 pb-4 text-center border-b border-white/5">
+          <h2 className="text-2xl font-bold text-white tracking-tight">SELECT MODE</h2>
+          
+          {/* Mode toggle */}
+          <div className="flex justify-center mt-4">
+            <div className="inline-flex bg-white/5 rounded-full p-1">
+              <button
+                onClick={() => setMode('normal')}
+                className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${
+                  mode === 'normal' 
+                    ? 'bg-accent-green text-black' 
+                    : 'text-white/60 hover:text-white'
+                }`}
+              >
+                SOLO
+              </button>
+              <button
+                onClick={() => setMode('duel')}
+                className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${
+                  mode === 'duel' 
+                    ? 'bg-accent-green text-black' 
+                    : 'text-white/60 hover:text-white'
+                }`}
+              >
+                DUEL
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Duration Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {DURATION_CARDS.map((card) => {
-            const isSelected = duration === card.duration && !showCustom;
-            return (
+        <div className="p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {modes.map(({ id, title, desc, tag, icon: Icon }) => {
+              const isSelected = duration === id && !showCustom;
+              return (
+                <button
+                  key={id}
+                  onClick={() => handleDurationSelect(id)}
+                  className={`relative p-5 rounded-xl text-left transition-all ${
+                    isSelected 
+                      ? 'card-selected' 
+                      : 'card hover:border-white/20'
+                  }`}
+                >
+                  {/* Selected indicator */}
+                  {isSelected && (
+                    <div className="absolute top-3 right-3 w-5 h-5 bg-accent-green rounded-full flex items-center justify-center">
+                      <CheckIcon />
+                    </div>
+                  )}
+                  
+                  {/* Icon */}
+                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-4 ${
+                    isSelected ? 'bg-accent-green/20 text-accent-green' : 'bg-white/5 text-white/40'
+                  }`}>
+                    <Icon />
+                  </div>
+                  
+                  {/* Content */}
+                  <h3 className={`text-lg font-bold mb-1 ${isSelected ? 'text-white' : 'text-white/90'}`}>
+                    {title}
+                  </h3>
+                  <p className="text-sm text-white/50 mb-4 line-clamp-2">
+                    {desc}
+                  </p>
+                  
+                  {/* Tag */}
+                  <div className="divider mb-3"></div>
+                  <span className={`text-xs font-semibold tracking-wider ${
+                    isSelected ? 'text-accent-green' : 'text-white/30'
+                  }`}>
+                    {tag}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Custom Duration */}
+          {duration !== DURATION_67_REPS && (
+            <div className="mt-4">
               <button
-                key={card.duration}
-                onClick={() => handleDurationSelect(card.duration)}
-                className={`
-                  relative p-5 rounded-xl border transition-all text-left
-                  ${isSelected 
-                    ? 'bg-accent-green/10 border-accent-green' 
-                    : 'bg-white/5 border-white/10 hover:border-white/30'
-                  }
-                `}
+                onClick={handleCustomToggle}
+                className={`w-full p-4 rounded-xl text-left transition-all flex items-center gap-4 ${
+                  showCustom ? 'card-selected' : 'card hover:border-white/20'
+                }`}
               >
-                {/* Selected Checkmark */}
-                {isSelected && (
-                  <div className="absolute top-3 right-3 w-5 h-5 bg-accent-green rounded-full flex items-center justify-center">
-                    <svg className="w-3 h-3 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                  showCustom ? 'bg-accent-green/20 text-accent-green' : 'bg-white/5 text-white/40'
+                }`}>
+                  <CustomIcon />
+                </div>
+                <div className="flex-1">
+                  <span className={`font-semibold ${showCustom ? 'text-white' : 'text-white/70'}`}>
+                    Custom Duration
+                  </span>
+                  <span className="text-white/40 text-sm ml-2">5-120 seconds</span>
+                </div>
+                {showCustom && (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={customSeconds}
+                      onChange={(e) => handleCustomChange(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      min={5}
+                      max={120}
+                      step="0.1"
+                      className="w-20 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-center font-mono text-sm"
+                    />
+                    <span className="text-white/50 text-sm">sec</span>
                   </div>
                 )}
-                
-                {/* Icon */}
-                <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-4 ${
-                  isSelected ? 'bg-accent-green/20 text-accent-green' : 'bg-white/10 text-white/60'
-                }`}>
-                  {card.icon}
-                </div>
-                
-                {/* Title */}
-                <h3 className={`text-lg font-bold mb-2 ${isSelected ? 'text-white' : 'text-white/90'}`}>
-                  {card.title}
-                </h3>
-                
-                {/* Description */}
-                <p className="text-white/50 text-sm mb-4 leading-relaxed">
-                  {card.description}
-                </p>
-                
-                {/* Category Label */}
-                <div className={`text-xs font-semibold tracking-wider ${
-                  isSelected ? 'text-accent-green' : 'text-white/30'
-                }`}>
-                  {card.category}
-                </div>
               </button>
-            );
-          })}
+              
+              {mode === 'normal' && showCustom && (
+                <p className="text-white/40 text-xs mt-2 px-1">
+                  Custom durations are not ranked on the leaderboard
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Custom Duration */}
-        {!showCustom ? (
-          <button
-            onClick={handleCustomToggle}
-            className="w-full py-3 rounded-xl border border-white/10 text-white/50 text-sm hover:border-white/30 hover:text-white/70 transition-all mb-6"
-          >
-            + Custom Duration
-          </button>
-        ) : (
-          <div className="mb-6 p-4 rounded-xl border border-accent-green bg-accent-green/5">
-            <div className="flex items-center gap-3">
-              <span className="text-white/50 text-sm uppercase tracking-wider">Duration:</span>
-              <input
-                type="number"
-                value={customSeconds}
-                onChange={(e) => handleCustomChange(e.target.value)}
-                min={MIN_CUSTOM_DURATION / 1000}
-                max={MAX_CUSTOM_DURATION / 1000}
-                step="0.1"
-                className="flex-1 bg-black/30 border border-white/20 rounded-lg px-4 py-2 text-white text-center font-mono focus:border-accent-green"
-              />
-              <span className="text-white/50 text-sm">seconds</span>
-              <button 
-                onClick={() => setShowCustom(false)}
-                className="text-white/30 hover:text-white/60 transition-colors"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            {mode === 'normal' && (
-              <p className="text-white/30 text-xs mt-2">Custom durations are unranked</p>
-            )}
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="flex items-center justify-between pt-4 border-t border-white/10">
+        {/* Footer Actions */}
+        <div className="p-6 pt-2 flex items-center justify-between border-t border-white/5">
           <button
             onClick={onCancel}
-            className="flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm"
+            className="btn-secondary text-sm"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 6L6 18M6 6l12 12" />
+              <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" />
             </svg>
             CANCEL
           </button>
           <button
             onClick={handleStart}
             disabled={!isValidDuration}
-            className={`
-              px-8 py-3 rounded-xl font-bold text-sm tracking-wide transition-all flex items-center gap-2
-              ${isValidDuration 
-                ? 'bg-accent-green text-black hover:bg-accent-green/90' 
-                : 'bg-white/10 text-white/30 cursor-not-allowed'
-              }
-            `}
+            className={`btn-primary text-sm ${!isValidDuration ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             START GAME
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M5 12h14M12 5l7 7-7 7" />
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         </div>
