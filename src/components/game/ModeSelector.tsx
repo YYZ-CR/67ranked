@@ -68,8 +68,8 @@ export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
         {/* Mode Selection */}
         <div className="mb-6">
           <label className="text-white/70 text-sm mb-2 block">Mode</label>
-          <div className="grid grid-cols-3 gap-2">
-            {(['normal', 'duel', 'challenge'] as const).map((m) => (
+          <div className="grid grid-cols-2 gap-2">
+            {(['normal', 'duel'] as const).map((m) => (
               <button
                 key={m}
                 onClick={() => setMode(m)}
@@ -81,7 +81,7 @@ export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
                   }
                 `}
               >
-                {m === 'normal' ? '🎮 Solo' : m === 'duel' ? '⚔️ Duel' : '🎯 Challenge'}
+                {m === 'normal' ? '🎮 Solo' : '⚔️ Duel'}
               </button>
             ))}
           </div>
@@ -89,8 +89,7 @@ export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
           {/* Mode description */}
           <p className="text-white/50 text-xs mt-2 text-center">
             {mode === 'normal' && 'Play solo and compete on the leaderboard'}
-            {mode === 'duel' && 'Real-time match: both players play simultaneously'}
-            {mode === 'challenge' && 'Async match: play now, opponent plays later'}
+            {mode === 'duel' && 'Real-time 1v1: both players play simultaneously'}
           </p>
         </div>
 

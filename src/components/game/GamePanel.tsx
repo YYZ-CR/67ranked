@@ -148,15 +148,9 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
     setDuration(selectedDuration);
     selectedDurationRef.current = selectedDuration; // Store immediately in ref
     
-    // For duel/challenge modes, we'd redirect to their respective pages
-    // For now, only normal mode is handled here
+    // Duel mode redirects to its own page
     if (mode === 'duel') {
       window.location.href = '/duel/create';
-      return;
-    }
-    
-    if (mode === 'challenge') {
-      window.location.href = '/challenge/create';
       return;
     }
     
