@@ -369,11 +369,6 @@ export class HandTracker {
       ctx.shadowColor = '#4ade80';
       ctx.shadowBlur = 20;
       
-      // Stroke outline
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
-      ctx.lineWidth = 6;
-      ctx.strokeText('6', x, y);
-      
       // Fill with green
       ctx.fillStyle = '#4ade80';
       ctx.fillText('6', x, y);
@@ -395,11 +390,6 @@ export class HandTracker {
       // Glow effect
       ctx.shadowColor = '#4ade80';
       ctx.shadowBlur = 20;
-      
-      // Stroke outline
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
-      ctx.lineWidth = 6;
-      ctx.strokeText('7', x, y);
       
       // Fill with green
       ctx.fillStyle = '#4ade80';
