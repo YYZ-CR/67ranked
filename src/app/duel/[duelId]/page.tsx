@@ -96,11 +96,28 @@ export default function DuelPage() {
   const gameEndedRef = useRef(false);
   const [containerSize, setContainerSize] = useState(400);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [totalPlayers, setTotalPlayers] = useState<number>(0);
 
   // Keep duel ref in sync
   useEffect(() => {
     duelDataRef.current = duel;
   }, [duel]);
+
+  // Fetch stats for player count
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/stats');
+        if (response.ok) {
+          const data = await response.json();
+          setTotalPlayers(data.totalPlayers || 0);
+        }
+      } catch (err) {
+        console.error('Failed to fetch stats:', err);
+      }
+    };
+    fetchStats();
+  }, []);
 
   // Load duel data
   useEffect(() => {
@@ -456,32 +473,33 @@ export default function DuelPage() {
     }
   }, [pageState, trackingState, startCountdown]);
 
-  // Update container size on resize
+  // Update container size on resize - make it fill available space
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
         const parent = containerRef.current.parentElement;
         if (parent) {
           const width = parent.clientWidth - 32; // Account for padding
-          const height = parent.clientHeight - 32;
+          const height = parent.clientHeight - 120; // More room for vertical space
           // Use the smaller dimension to keep square
           // Max 400px on mobile (<640px), 550px on larger screens
           const isMobile = window.innerWidth < 640;
           const maxSize = isMobile ? 400 : 550;
           const size = Math.min(width, height, maxSize);
-          setContainerSize(Math.max(size, 240)); // minimum 240px
+          setContainerSize(Math.max(size, 300)); // minimum 300px (increased from 240px)
         }
       }
     };
     
     updateSize();
     window.addEventListener('resize', updateSize);
+    // Small delay to ensure parent is sized
     const timeout = setTimeout(updateSize, 100);
     return () => {
       window.removeEventListener('resize', updateSize);
       clearTimeout(timeout);
     };
-  }, []);
+  }, [pageState]); // Re-run when page state changes
 
   // Cleanup
   useEffect(() => {
@@ -511,7 +529,7 @@ export default function DuelPage() {
   if (pageState === 'loading') {
     return (
       <main className="min-h-screen bg-bg-primary bg-grid-pattern bg-gradient-radial">
-        <Header showNav={false} />
+        <Header showNav={false} playerCount={totalPlayers} />
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-white/50 text-sm">Loading...</div>
         </div>
@@ -522,7 +540,7 @@ export default function DuelPage() {
   if (pageState === 'error') {
     return (
       <main className="min-h-screen bg-bg-primary bg-grid-pattern bg-gradient-radial">
-        <Header showNav={false} />
+        <Header showNav={false} playerCount={totalPlayers} />
         <div className="min-h-screen flex items-center justify-center p-4">
           <div className="glass-panel p-6 rounded-xl max-w-sm w-full text-center">
             <h2 className="text-lg font-bold text-white mb-2">Error</h2>
@@ -542,7 +560,7 @@ export default function DuelPage() {
   if (pageState === 'join') {
     return (
       <main className="min-h-screen bg-bg-primary bg-grid-pattern bg-gradient-radial">
-        <Header showNav={false} />
+        <Header showNav={false} playerCount={totalPlayers} />
         <div className="min-h-screen flex items-center justify-center p-4 pt-16">
           <div className="glass-panel p-5 rounded-xl max-w-sm w-full">
             <h1 className="text-xl font-bold text-white mb-1 text-center">Duel Challenge</h1>
@@ -592,7 +610,7 @@ export default function DuelPage() {
 
     return (
       <main className="min-h-screen bg-bg-primary bg-grid-pattern bg-gradient-radial">
-        <Header showNav={false} />
+        <Header showNav={false} playerCount={totalPlayers} />
         <div className="min-h-screen flex items-center justify-center p-4 pt-16">
           <div className="glass-panel p-5 rounded-xl max-w-sm w-full">
             <h1 className="text-xl font-bold text-white mb-5 text-center">Duel Lobby</h1>
