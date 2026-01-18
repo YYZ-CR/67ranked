@@ -349,7 +349,10 @@ export default function DuelPage() {
     }
   }, [duelId, myPlayerKey, duel, startGameplay]);
 
-  // Initialize camera
+  // Track state for calibration effect
+  const [trackingState, setTrackingState] = useState<{ bothHandsDetected: boolean } | null>(null);
+
+  // Initialize camera - only sets up tracking, doesn't handle calibration
   const initializeCamera = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) return;
 
@@ -364,13 +367,7 @@ export default function DuelPage() {
         canvasRef.current,
         (state) => {
           setTrackingLost(!state.bothHandsDetected);
-          
-          if (pageState === 'calibrating' && calibrationTrackerRef.current) {
-            const calibrated = calibrationTrackerRef.current.processFrame(state.bothHandsDetected);
-            if (calibrated) {
-              startCountdown();
-            }
-          }
+          setTrackingState(state);
         }
       );
 
@@ -379,7 +376,7 @@ export default function DuelPage() {
       setError('Failed to access camera');
       setPageState('error');
     }
-  }, [pageState, startCountdown]);
+  }, []);
 
   // Start camera when entering calibration
   useEffect(() => {
@@ -387,6 +384,16 @@ export default function DuelPage() {
       initializeCamera();
     }
   }, [pageState, initializeCamera]);
+
+  // Handle calibration in a separate effect (like normal GamePanel does)
+  useEffect(() => {
+    if (pageState !== 'calibrating' || !calibrationTrackerRef.current || !trackingState) return;
+
+    const calibrated = calibrationTrackerRef.current.processFrame(trackingState.bothHandsDetected);
+    if (calibrated) {
+      startCountdown();
+    }
+  }, [pageState, trackingState, startCountdown]);
 
   // Cleanup
   useEffect(() => {
