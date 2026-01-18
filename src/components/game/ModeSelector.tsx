@@ -2,12 +2,51 @@
 
 import { useState, useEffect } from 'react';
 import { GameMode, DURATION_6_7S, DURATION_20S, DURATION_67_REPS, MIN_CUSTOM_DURATION, MAX_CUSTOM_DURATION } from '@/types/game';
-import { PlayIcon, SwordsIcon, TimerIcon, FlameIcon, TargetIcon } from '@/components/ui/Icons';
 
 interface ModeSelectorProps {
   onSelect: (mode: GameMode, duration: number) => void;
   onCancel: () => void;
 }
+
+// Mode card data
+const DURATION_CARDS = [
+  {
+    duration: DURATION_6_7S,
+    title: '6.7s Sprint',
+    description: 'Maximum reps in 6.7 seconds. Every millisecond counts.',
+    category: 'SPEED',
+    icon: (
+      <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.96 17.55 11 21 11 21z"/>
+      </svg>
+    ),
+  },
+  {
+    duration: DURATION_20S,
+    title: '20s Endurance',
+    description: 'Sustained output over time. Maintain your tempo.',
+    category: 'STAMINA',
+    icon: (
+      <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    ),
+  },
+  {
+    duration: DURATION_67_REPS,
+    title: '67 Reps',
+    description: 'Race to complete 67 reps. Fastest time wins.',
+    category: 'PRECISION',
+    icon: (
+      <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" />
+        <circle cx="12" cy="12" r="6" />
+        <circle cx="12" cy="12" r="2" fill="currentColor" />
+      </svg>
+    ),
+  },
+];
 
 export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
   const [mode, setMode] = useState<GameMode>('normal');
@@ -15,7 +54,6 @@ export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
   const [customSeconds, setCustomSeconds] = useState<string>('10.0');
   const [showCustom, setShowCustom] = useState(false);
 
-  // Load last used settings from localStorage
   useEffect(() => {
     const savedMode = localStorage.getItem('67ranked_lastMode') as GameMode | null;
     const savedDuration = localStorage.getItem('67ranked_lastDuration');
@@ -51,7 +89,6 @@ export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
   };
 
   const handleStart = () => {
-    // Save to localStorage
     localStorage.setItem('67ranked_lastMode', mode);
     localStorage.setItem('67ranked_lastDuration', duration.toString());
     onSelect(mode, duration);
@@ -60,167 +97,159 @@ export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
   const isValidDuration = duration === DURATION_67_REPS || (duration >= MIN_CUSTOM_DURATION && duration <= MAX_CUSTOM_DURATION);
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/70">
-      <div className="glass-panel p-6 rounded-2xl max-w-sm w-full mx-4">
-        <h2 className="text-2xl font-bold text-white text-center mb-6">
-          Choose Your Game
+    <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+      <div className="bg-bg-secondary border border-white/10 rounded-2xl p-8 max-w-3xl w-full mx-4 animate-scale-in">
+        {/* Header */}
+        <h2 className="text-2xl font-bold text-white text-center mb-2 tracking-wide">
+          SELECT MODE
         </h2>
-
-        {/* Mode Selection */}
-        <div className="mb-6">
-          <label className="text-white/70 text-sm mb-2 block uppercase tracking-wider text-xs">Mode</label>
-          <div className="grid grid-cols-2 gap-2">
+        
+        {/* Solo/Duel Toggle */}
+        <div className="flex justify-center mb-8">
+          <div className="inline-flex bg-white/5 rounded-full p-1">
             <button
               onClick={() => setMode('normal')}
               className={`
-                py-3 px-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2
+                px-8 py-2 rounded-full text-sm font-semibold transition-all
                 ${mode === 'normal' 
                   ? 'bg-accent-green text-black' 
-                  : 'bg-white/10 text-white hover:bg-white/20'
+                  : 'text-white/60 hover:text-white'
                 }
               `}
             >
-              <PlayIcon size={18} />
-              Solo
+              SOLO
             </button>
             <button
               onClick={() => setMode('duel')}
               className={`
-                py-3 px-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2
+                px-8 py-2 rounded-full text-sm font-semibold transition-all
                 ${mode === 'duel' 
                   ? 'bg-accent-green text-black' 
-                  : 'bg-white/10 text-white hover:bg-white/20'
+                  : 'text-white/60 hover:text-white'
                 }
               `}
             >
-              <SwordsIcon size={18} />
-              Duel
+              DUEL
             </button>
           </div>
-          
-          {/* Mode description */}
-          <p className="text-white/50 text-xs mt-2 text-center">
-            {mode === 'normal' && 'Play solo and compete on the leaderboard'}
-            {mode === 'duel' && 'Real-time 1v1: both players play simultaneously'}
-          </p>
         </div>
 
-        {/* Duration Selection */}
-        <div className="mb-6">
-          <label className="text-white/70 text-sm mb-2 block uppercase tracking-wider text-xs">Game Type</label>
-          <div className="grid grid-cols-3 gap-2 mb-2">
-            <button
-              onClick={() => handleDurationSelect(DURATION_6_7S)}
-              className={`
-                py-3 rounded-xl font-semibold transition-all text-sm flex flex-col items-center gap-1
-                ${duration === DURATION_6_7S && !showCustom
-                  ? 'bg-accent-green text-black' 
-                  : 'bg-white/10 text-white hover:bg-white/20'
-                }
-              `}
-            >
-              <FlameIcon size={18} />
-              <div>6.7s</div>
-              <div className="text-xs opacity-70">Sprint</div>
-            </button>
-            <button
-              onClick={() => handleDurationSelect(DURATION_20S)}
-              className={`
-                py-3 rounded-xl font-semibold transition-all text-sm flex flex-col items-center gap-1
-                ${duration === DURATION_20S && !showCustom
-                  ? 'bg-accent-green text-black' 
-                  : 'bg-white/10 text-white hover:bg-white/20'
-                }
-              `}
-            >
-              <TimerIcon size={18} />
-              <div>20s</div>
-              <div className="text-xs opacity-70">Endurance</div>
-            </button>
-            <button
-              onClick={() => handleDurationSelect(DURATION_67_REPS)}
-              className={`
-                py-3 rounded-xl font-semibold transition-all text-sm flex flex-col items-center gap-1
-                ${duration === DURATION_67_REPS
-                  ? 'bg-accent-green text-black' 
-                  : 'bg-white/10 text-white hover:bg-white/20'
-                }
-              `}
-            >
-              <TargetIcon size={18} />
-              <div>67 Reps</div>
-              <div className="text-xs opacity-70">Speedrun</div>
-            </button>
-          </div>
-          
-          {/* Custom duration toggle */}
-          {duration !== DURATION_67_REPS && (
-            <button
-              onClick={handleCustomToggle}
-              className={`
-                w-full py-2 rounded-xl font-semibold transition-all text-sm
-                ${showCustom
-                  ? 'bg-accent-green text-black' 
-                  : 'bg-white/10 text-white hover:bg-white/20'
-                }
-              `}
-            >
-              Custom Duration
-            </button>
-          )}
+        {/* Duration Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {DURATION_CARDS.map((card) => {
+            const isSelected = duration === card.duration && !showCustom;
+            return (
+              <button
+                key={card.duration}
+                onClick={() => handleDurationSelect(card.duration)}
+                className={`
+                  relative p-5 rounded-xl border transition-all text-left
+                  ${isSelected 
+                    ? 'bg-accent-green/10 border-accent-green' 
+                    : 'bg-white/5 border-white/10 hover:border-white/30'
+                  }
+                `}
+              >
+                {/* Selected Checkmark */}
+                {isSelected && (
+                  <div className="absolute top-3 right-3 w-5 h-5 bg-accent-green rounded-full flex items-center justify-center">
+                    <svg className="w-3 h-3 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </div>
+                )}
+                
+                {/* Icon */}
+                <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-4 ${
+                  isSelected ? 'bg-accent-green/20 text-accent-green' : 'bg-white/10 text-white/60'
+                }`}>
+                  {card.icon}
+                </div>
+                
+                {/* Title */}
+                <h3 className={`text-lg font-bold mb-2 ${isSelected ? 'text-white' : 'text-white/90'}`}>
+                  {card.title}
+                </h3>
+                
+                {/* Description */}
+                <p className="text-white/50 text-sm mb-4 leading-relaxed">
+                  {card.description}
+                </p>
+                
+                {/* Category Label */}
+                <div className={`text-xs font-semibold tracking-wider ${
+                  isSelected ? 'text-accent-green' : 'text-white/30'
+                }`}>
+                  {card.category}
+                </div>
+              </button>
+            );
+          })}
+        </div>
 
-          {/* Custom duration input */}
-          {showCustom && (
-            <div className="mt-3">
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  value={customSeconds}
-                  onChange={(e) => handleCustomChange(e.target.value)}
-                  min={MIN_CUSTOM_DURATION / 1000}
-                  max={MAX_CUSTOM_DURATION / 1000}
-                  step="0.1"
-                  className="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-center font-mono focus:outline-none focus:border-accent-green"
-                />
-                <span className="text-white/70">seconds</span>
-              </div>
-              <p className="text-white/40 text-xs mt-1">
-                5-120 seconds (step 0.1s)
-              </p>
+        {/* Custom Duration */}
+        {!showCustom ? (
+          <button
+            onClick={handleCustomToggle}
+            className="w-full py-3 rounded-xl border border-white/10 text-white/50 text-sm hover:border-white/30 hover:text-white/70 transition-all mb-6"
+          >
+            + Custom Duration
+          </button>
+        ) : (
+          <div className="mb-6 p-4 rounded-xl border border-accent-green bg-accent-green/5">
+            <div className="flex items-center gap-3">
+              <span className="text-white/50 text-sm uppercase tracking-wider">Duration:</span>
+              <input
+                type="number"
+                value={customSeconds}
+                onChange={(e) => handleCustomChange(e.target.value)}
+                min={MIN_CUSTOM_DURATION / 1000}
+                max={MAX_CUSTOM_DURATION / 1000}
+                step="0.1"
+                className="flex-1 bg-black/30 border border-white/20 rounded-lg px-4 py-2 text-white text-center font-mono focus:border-accent-green"
+              />
+              <span className="text-white/50 text-sm">seconds</span>
+              <button 
+                onClick={() => setShowCustom(false)}
+                className="text-white/30 hover:text-white/60 transition-colors"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-          )}
-          
-          {/* Leaderboard eligibility note */}
-          {mode === 'normal' && showCustom && (
-            <p className="text-yellow-400/70 text-xs mt-2 flex items-center gap-1">
-              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2L1 21h22L12 2zm0 3.99L19.53 19H4.47L12 5.99zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/>
-              </svg>
-              Custom durations don&apos;t qualify for the leaderboard
-            </p>
-          )}
-        </div>
+            {mode === 'normal' && (
+              <p className="text-white/30 text-xs mt-2">Custom durations are unranked</p>
+            )}
+          </div>
+        )}
 
-        {/* Action buttons */}
-        <div className="flex gap-3">
+        {/* Action Buttons */}
+        <div className="flex items-center justify-between pt-4 border-t border-white/10">
           <button
             onClick={onCancel}
-            className="flex-1 py-3 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/20 transition-all"
+            className="flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm"
           >
-            Cancel
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+            CANCEL
           </button>
           <button
             onClick={handleStart}
             disabled={!isValidDuration}
             className={`
-              flex-1 py-3 rounded-xl font-semibold transition-all
+              px-8 py-3 rounded-xl font-bold text-sm tracking-wide transition-all flex items-center gap-2
               ${isValidDuration 
                 ? 'bg-accent-green text-black hover:bg-accent-green/90' 
-                : 'bg-white/10 text-white/50 cursor-not-allowed'
+                : 'bg-white/10 text-white/30 cursor-not-allowed'
               }
             `}
           >
-            Start →
+            START GAME
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
           </button>
         </div>
       </div>

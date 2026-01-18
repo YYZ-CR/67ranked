@@ -2,7 +2,6 @@
 
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { DURATION_6_7S, DURATION_20S, DURATION_67_REPS, is67RepsMode } from '@/types/game';
-import { TrophyIcon, MedalIcon, FlameIcon, TimerIcon, TargetIcon } from '@/components/ui/Icons';
 
 interface LeaderboardPanelProps {
   refreshTrigger?: number;
@@ -19,54 +18,72 @@ export function LeaderboardPanel({ refreshTrigger }: LeaderboardPanelProps) {
   const is67Reps = is67RepsMode(selectedDuration);
 
   return (
-    <div className="h-full flex flex-col bg-gray-900/50 rounded-2xl overflow-hidden">
-      {/* Header with toggle */}
+    <div className="h-full flex flex-col bg-bg-secondary border border-white/10 rounded-2xl overflow-hidden">
+      {/* Header */}
       <div className="flex-shrink-0 p-4 border-b border-white/10">
-        <h2 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
-          <TrophyIcon size={24} className="text-yellow-400" />
-          Leaderboard
-        </h2>
-        
-        {/* Duration toggle */}
-        <div className="flex gap-2">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-white tracking-wide">LEADERBOARD</h2>
           <button
-            onClick={() => setSelectedDuration(DURATION_6_7S)}
+            onClick={refresh}
+            disabled={isLoading}
             className={`
-              flex-1 py-2 px-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5
-              ${selectedDuration === DURATION_6_7S
-                ? 'bg-accent-green text-black'
-                : 'bg-white/10 text-white hover:bg-white/20'
+              p-2 rounded-lg transition-all
+              ${isLoading 
+                ? 'text-white/20 cursor-not-allowed' 
+                : 'text-white/50 hover:text-white hover:bg-white/10'
               }
             `}
           >
-            <FlameIcon size={14} />
+            <svg 
+              className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M23 4v6h-6M1 20v-6h6" />
+              <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+            </svg>
+          </button>
+        </div>
+        
+        {/* Duration Tabs */}
+        <div className="flex bg-white/5 rounded-lg p-1">
+          <button
+            onClick={() => setSelectedDuration(DURATION_6_7S)}
+            className={`
+              flex-1 py-2 px-2 rounded-md text-xs font-semibold transition-all
+              ${selectedDuration === DURATION_6_7S
+                ? 'bg-accent-green text-black'
+                : 'text-white/50 hover:text-white'
+              }
+            `}
+          >
             6.7s
           </button>
           <button
             onClick={() => setSelectedDuration(DURATION_20S)}
             className={`
-              flex-1 py-2 px-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5
+              flex-1 py-2 px-2 rounded-md text-xs font-semibold transition-all
               ${selectedDuration === DURATION_20S
                 ? 'bg-accent-green text-black'
-                : 'bg-white/10 text-white hover:bg-white/20'
+                : 'text-white/50 hover:text-white'
               }
             `}
           >
-            <TimerIcon size={14} />
             20s
           </button>
           <button
             onClick={() => setSelectedDuration(DURATION_67_REPS)}
             className={`
-              flex-1 py-2 px-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5
+              flex-1 py-2 px-2 rounded-md text-xs font-semibold transition-all
               ${selectedDuration === DURATION_67_REPS
                 ? 'bg-accent-green text-black'
-                : 'bg-white/10 text-white hover:bg-white/20'
+                : 'text-white/50 hover:text-white'
               }
             `}
           >
-            <TargetIcon size={14} />
-            67 Reps
+            67 REPS
           </button>
         </div>
       </div>
@@ -76,22 +93,33 @@ export function LeaderboardPanel({ refreshTrigger }: LeaderboardPanelProps) {
         {isLoading ? (
           <LeaderboardSkeleton />
         ) : error ? (
-          <div className="p-4 text-center">
-            <p className="text-red-400 text-sm mb-2">{error}</p>
+          <div className="p-6 text-center">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+              <svg className="w-6 h-6 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M15 9l-6 6M9 9l6 6" />
+              </svg>
+            </div>
+            <p className="text-red-400 text-sm mb-3">{error}</p>
             <button
               onClick={refresh}
-              className="text-accent-green text-sm hover:underline"
+              className="text-accent-green text-xs font-semibold hover:underline"
             >
-              Try again
+              TRY AGAIN
             </button>
           </div>
         ) : entries.length === 0 ? (
           <div className="p-8 text-center">
-            <p className="text-white/50 text-sm">No scores yet!</p>
-            <p className="text-white/30 text-xs mt-1">Be the first to submit a score</p>
+            <div className="w-12 h-12 mx-auto mb-3 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+              <svg className="w-6 h-6 text-white/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M8 21h8M12 17V7M17 4H7M7 4L5 6M7 4l2 2M17 4l2 2M17 4l-2 2" />
+              </svg>
+            </div>
+            <p className="text-white/50 text-sm">No scores yet</p>
+            <p className="text-white/30 text-xs mt-1">Be the first!</p>
           </div>
         ) : (
-          <div className="divide-y divide-white/5">
+          <div>
             {entries.map((entry, index) => (
               <LeaderboardRow
                 key={entry.id}
@@ -107,37 +135,10 @@ export function LeaderboardPanel({ refreshTrigger }: LeaderboardPanelProps) {
         )}
       </div>
 
-      {/* Footer with refresh button */}
-      <div className="flex-shrink-0 p-3 border-t border-white/10 flex items-center justify-between">
-        <p className="text-white/30 text-xs">
-          Top 100 • Auto-refresh 60s
-        </p>
-        <button
-          onClick={refresh}
-          disabled={isLoading}
-          className={`
-            flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all
-            ${isLoading 
-              ? 'bg-white/5 text-white/30 cursor-not-allowed' 
-              : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
-            }
-          `}
-        >
-          <svg 
-            className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} 
-            fill="none" 
-            viewBox="0 0 24 24" 
-            stroke="currentColor"
-          >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
-            />
-          </svg>
-          Refresh
-        </button>
+      {/* Footer */}
+      <div className="flex-shrink-0 p-3 border-t border-white/5 flex items-center justify-between text-white/20 text-xs">
+        <span>TOP 100</span>
+        <span>AUTO-REFRESH 60s</span>
       </div>
     </div>
   );
@@ -153,51 +154,46 @@ interface LeaderboardRowProps {
 }
 
 function LeaderboardRow({ rank, username, score, isTop3, index, is67RepsMode = false }: LeaderboardRowProps) {
-  // Format time for 67 reps mode (score is in ms)
   const formatTime = (ms: number) => (ms / 1000).toFixed(2);
+
+  const getRankStyle = (rank: number) => {
+    if (rank === 1) return 'bg-yellow-400/20 text-yellow-400 border-yellow-400/50';
+    if (rank === 2) return 'bg-gray-300/20 text-gray-300 border-gray-300/50';
+    if (rank === 3) return 'bg-amber-600/20 text-amber-500 border-amber-600/50';
+    return 'bg-white/5 text-white/50 border-white/10';
+  };
 
   return (
     <div 
       className={`
-        flex items-center px-4 py-3 transition-colors
-        ${isTop3 ? 'bg-white/5' : 'hover:bg-white/5'}
+        flex items-center px-4 py-3 border-b border-white/5 transition-colors hover:bg-white/5
+        ${isTop3 ? 'bg-white/[0.02]' : ''}
       `}
       style={{
-        animation: `fadeIn 0.3s ease-out ${index * 0.03}s both`
+        animation: `fadeIn 0.3s ease-out ${index * 0.02}s both`
       }}
     >
-      {/* Rank */}
-      <div className="w-10 flex-shrink-0 flex items-center">
-        {rank === 1 ? (
-          <MedalIcon size={24} variant="gold" />
-        ) : rank === 2 ? (
-          <MedalIcon size={24} variant="silver" />
-        ) : rank === 3 ? (
-          <MedalIcon size={24} variant="bronze" />
-        ) : (
-          <span className="text-white/50 text-sm font-mono pl-1">{rank}</span>
-        )}
+      {/* Rank Badge */}
+      <div className={`
+        w-8 h-8 rounded-lg border flex items-center justify-center font-bold text-sm mr-3
+        ${getRankStyle(rank)}
+      `}>
+        {rank}
       </div>
 
       {/* Username */}
       <div className="flex-1 min-w-0">
-        <p className={`
-          truncate font-medium
-          ${isTop3 ? 'text-white' : 'text-white/80'}
-        `}>
+        <p className={`truncate font-medium ${isTop3 ? 'text-white' : 'text-white/70'}`}>
           {username}
         </p>
       </div>
 
       {/* Score */}
-      <div className="flex-shrink-0 ml-3">
-        <span className={`
-          font-bold tabular-nums
-          ${isTop3 ? 'text-accent-green text-lg' : 'text-white'}
-        `}>
-          {is67RepsMode ? formatTime(score) : score}
+      <div className="flex-shrink-0 ml-3 text-right">
+        <span className={`font-mono font-bold ${isTop3 ? 'text-accent-green text-lg' : 'text-white'}`}>
+          {is67RepsMode ? formatTime(score) : score.toLocaleString()}
         </span>
-        <span className="text-white/40 text-xs ml-1">{is67RepsMode ? 's' : 'reps'}</span>
+        <span className="text-white/30 text-xs ml-1">{is67RepsMode ? 's' : 'reps'}</span>
       </div>
     </div>
   );
@@ -205,17 +201,15 @@ function LeaderboardRow({ rank, username, score, isTop3, index, is67RepsMode = f
 
 function LeaderboardSkeleton() {
   return (
-    <div className="divide-y divide-white/5">
+    <div>
       {Array.from({ length: 10 }).map((_, i) => (
-        <div key={i} className="flex items-center px-4 py-3">
-          <div className="w-10 flex-shrink-0">
-            <div className="w-6 h-6 bg-white/10 rounded animate-pulse" />
+        <div key={i} className="flex items-center px-4 py-3 border-b border-white/5">
+          <div className="w-8 h-8 bg-white/5 rounded-lg animate-pulse mr-3" />
+          <div className="flex-1">
+            <div className="h-4 bg-white/5 rounded w-24 animate-pulse" />
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="h-4 bg-white/10 rounded w-24 animate-pulse" />
-          </div>
-          <div className="flex-shrink-0 ml-3">
-            <div className="h-5 bg-white/10 rounded w-12 animate-pulse" />
+          <div className="w-16">
+            <div className="h-5 bg-white/5 rounded animate-pulse" />
           </div>
         </div>
       ))}

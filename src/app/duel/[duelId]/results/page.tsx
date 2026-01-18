@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { is67RepsMode } from '@/types/game';
-import { SwordsIcon, CrownIcon, EqualsIcon, HomeIcon } from '@/components/ui/Icons';
 
 interface DuelData {
   id: string;
@@ -49,7 +48,13 @@ export default function DuelResultsPage() {
   if (loading) {
     return (
       <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center">
-        <div className="text-white/50">Loading...</div>
+        <div className="flex items-center gap-3 text-white/30">
+          <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10" strokeOpacity="0.3" />
+            <path d="M12 2a10 10 0 0110 10" />
+          </svg>
+          <span className="text-sm tracking-wider">LOADING DUEL DATA...</span>
+        </div>
       </main>
     );
   }
@@ -57,18 +62,24 @@ export default function DuelResultsPage() {
   if (error || !duel) {
     return (
       <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
-        <div className="glass-panel p-6 rounded-2xl max-w-md w-full text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center">
-            <SwordsIcon size={32} className="text-white/50" />
+        <div className="bg-bg-secondary border border-white/10 p-8 rounded-2xl max-w-md w-full text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+            <svg className="w-8 h-8 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M15 9l-6 6M9 9l6 6" />
+            </svg>
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">Duel Not Found</h2>
-          <p className="text-white/70 mb-4">{error || 'This duel does not exist'}</p>
+          <h2 className="text-xl font-bold text-white mb-2">DUEL NOT FOUND</h2>
+          <p className="text-white/50 mb-6 text-sm">{error || 'This duel does not exist'}</p>
           <button
             onClick={() => router.push('/')}
-            className="px-6 py-3 rounded-xl bg-accent-green text-black font-semibold flex items-center justify-center gap-2 w-full"
+            className="px-8 py-3 rounded-xl bg-accent-green text-black font-bold hover:bg-accent-green/90 transition-all flex items-center justify-center gap-2 w-full"
           >
-            <HomeIcon size={18} />
-            Back to Home
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+              <polyline points="9,22 9,12 15,12 15,22" />
+            </svg>
+            BACK TO HOME
           </button>
         </div>
       </main>
@@ -76,23 +87,21 @@ export default function DuelResultsPage() {
   }
 
   const is67Reps = is67RepsMode(duel.duration_ms);
-  const formatTime = (ms: number) => (ms / 1000).toFixed(2) + 's';
+  const formatTime = (ms: number) => (ms / 1000).toFixed(2);
   const formatDuration = (ms: number) => {
-    if (ms === -1) return '67 Reps';
-    return (ms / 1000).toFixed(1) + 's';
+    if (ms === -1) return '67 REPS';
+    return (ms / 1000).toFixed(1) + 'S';
   };
 
   const player1 = players[0];
   const player2 = players[1];
   const bothSubmitted = player1?.score !== null && player2?.score !== null;
 
-  // Determine winner
   let winner: string | null = null;
   let outcome: 'player1' | 'player2' | 'tie' | null = null;
   
   if (bothSubmitted && player1 && player2) {
     if (is67Reps) {
-      // Lower time wins
       if (player1.score! < player2.score!) {
         winner = player1.username;
         outcome = 'player1';
@@ -103,7 +112,6 @@ export default function DuelResultsPage() {
         outcome = 'tie';
       }
     } else {
-      // Higher reps wins
       if (player1.score! > player2.score!) {
         winner = player1.username;
         outcome = 'player1';
@@ -118,111 +126,127 @@ export default function DuelResultsPage() {
 
   return (
     <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
-      <div className="glass-panel p-8 rounded-2xl max-w-md w-full">
+      <div className="bg-bg-secondary border border-white/10 rounded-2xl max-w-lg w-full overflow-hidden">
         {/* Header */}
-        <div className="text-center mb-6">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <SwordsIcon size={28} className="text-white" />
-            <h1 className="text-3xl font-bold text-white">Duel Results</h1>
+        <div className="bg-white/5 border-b border-white/10 px-6 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-white tracking-wide">DUEL RESULTS</h1>
+            <p className="text-white/30 text-xs tracking-wider">{formatDuration(duel.duration_ms)} MODE</p>
           </div>
-          <p className="text-white/50 text-sm uppercase tracking-wider">{formatDuration(duel.duration_ms)} mode</p>
-        </div>
-
-        {/* Winner Banner */}
-        {bothSubmitted && (
-          <div className={`text-center mb-6 py-3 rounded-xl flex items-center justify-center gap-2 ${
-            outcome === 'tie' ? 'bg-yellow-500/20' : 'bg-accent-green/20'
-          }`}>
-            {outcome === 'tie' ? (
-              <EqualsIcon size={24} className="text-yellow-400" />
-            ) : (
-              <CrownIcon size={24} className="text-accent-green" />
-            )}
-            <p className={`text-2xl font-black ${
-              outcome === 'tie' ? 'text-yellow-400' : 'text-accent-green'
+          <div className="text-right">
+            <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${
+              bothSubmitted ? 'bg-accent-green/20 text-accent-green' : 'bg-yellow-500/20 text-yellow-400'
             }`}>
-              {outcome === 'tie' ? 'TIE!' : `${winner} WINS!`}
-            </p>
-          </div>
-        )}
-
-        {/* Scores */}
-        <div className="flex justify-center gap-6 mb-8">
-          {/* Player 1 */}
-          <div className={`flex-1 text-center p-4 rounded-xl ${
-            outcome === 'player1' ? 'bg-accent-green/20 ring-2 ring-accent-green' : 'bg-white/5'
-          }`}>
-            <p className="text-white/60 text-sm mb-1 truncate">{player1?.username || 'Player 1'}</p>
-            <p className={`text-4xl font-black ${
-              outcome === 'player1' ? 'text-accent-green' : 'text-white'
-            }`}>
-              {player1?.score !== null 
-                ? (is67Reps ? formatTime(player1.score!) : player1.score)
-                : '—'}
-            </p>
-            {is67Reps && player1?.score !== null && (
-              <p className="text-white/40 text-xs mt-1">67 reps</p>
-            )}
-            {!is67Reps && player1?.score !== null && (
-              <p className="text-white/40 text-xs mt-1">reps</p>
-            )}
-          </div>
-
-          {/* VS */}
-          <div className="flex items-center">
-            <span className="text-white/30 text-xl font-bold">VS</span>
-          </div>
-
-          {/* Player 2 */}
-          <div className={`flex-1 text-center p-4 rounded-xl ${
-            outcome === 'player2' ? 'bg-accent-green/20 ring-2 ring-accent-green' : 'bg-white/5'
-          }`}>
-            <p className="text-white/60 text-sm mb-1 truncate">{player2?.username || 'Player 2'}</p>
-            <p className={`text-4xl font-black ${
-              outcome === 'player2' ? 'text-accent-green' : 'text-white'
-            }`}>
-              {player2?.score !== null 
-                ? (is67Reps ? formatTime(player2.score!) : player2.score)
-                : '—'}
-            </p>
-            {is67Reps && player2?.score !== null && (
-              <p className="text-white/40 text-xs mt-1">67 reps</p>
-            )}
-            {!is67Reps && player2?.score !== null && (
-              <p className="text-white/40 text-xs mt-1">reps</p>
-            )}
+              <span className={`w-2 h-2 rounded-full ${bothSubmitted ? 'bg-accent-green' : 'bg-yellow-400 animate-pulse'}`}></span>
+              {bothSubmitted ? 'COMPLETE' : 'IN PROGRESS'}
+            </span>
           </div>
         </div>
 
-        {/* Status */}
-        {!bothSubmitted && (
-          <div className="text-center mb-6 py-3 bg-white/5 rounded-xl flex items-center justify-center gap-2">
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            <p className="text-white/50">Waiting for both players to finish...</p>
-          </div>
-        )}
+        <div className="p-6">
+          {/* Winner Banner */}
+          {bothSubmitted && (
+            <div className={`text-center mb-6 py-4 rounded-xl border ${
+              outcome === 'tie' 
+                ? 'bg-yellow-500/10 border-yellow-500/30' 
+                : 'bg-accent-green/10 border-accent-green/30'
+            }`}>
+              <p className={`text-3xl font-black tracking-wide ${
+                outcome === 'tie' ? 'text-yellow-400' : 'text-accent-green'
+              }`}>
+                {outcome === 'tie' ? 'TIE GAME' : `${winner?.toUpperCase()} WINS`}
+              </p>
+            </div>
+          )}
 
-        {/* Actions */}
-        <div className="flex flex-col gap-2">
-          <button
-            onClick={() => router.push('/duel/create')}
-            className="w-full py-3 rounded-xl bg-purple-500 text-white font-semibold hover:bg-purple-600 transition-all flex items-center justify-center gap-2"
-          >
-            <SwordsIcon size={20} />
-            Start Your Own Duel
-          </button>
-          <button
-            onClick={() => router.push('/')}
-            className="w-full py-3 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/20 transition-all flex items-center justify-center gap-2"
-          >
-            <HomeIcon size={18} />
-            Back to Home
-          </button>
+          {/* Scores */}
+          <div className="flex gap-4 mb-6">
+            {/* Player 1 */}
+            <div className={`flex-1 p-4 rounded-xl border transition-all ${
+              outcome === 'player1' 
+                ? 'bg-accent-green/10 border-accent-green' 
+                : 'bg-white/5 border-white/10'
+            }`}>
+              <p className="text-white/50 text-xs uppercase tracking-wider mb-2 truncate">
+                {player1?.username || 'PLAYER 1'}
+              </p>
+              <p className={`text-4xl font-black font-mono ${
+                outcome === 'player1' ? 'text-accent-green' : 'text-white'
+              }`}>
+                {player1?.score !== null 
+                  ? (is67Reps ? formatTime(player1.score!) : player1.score)
+                  : '—'}
+              </p>
+              <p className="text-white/30 text-xs mt-1">
+                {is67Reps ? 'seconds' : 'reps'}
+              </p>
+            </div>
+
+            {/* VS Divider */}
+            <div className="flex items-center">
+              <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+                <span className="text-white/30 text-xs font-bold">VS</span>
+              </div>
+            </div>
+
+            {/* Player 2 */}
+            <div className={`flex-1 p-4 rounded-xl border transition-all ${
+              outcome === 'player2' 
+                ? 'bg-accent-green/10 border-accent-green' 
+                : 'bg-white/5 border-white/10'
+            }`}>
+              <p className="text-white/50 text-xs uppercase tracking-wider mb-2 truncate">
+                {player2?.username || 'PLAYER 2'}
+              </p>
+              <p className={`text-4xl font-black font-mono ${
+                outcome === 'player2' ? 'text-accent-green' : 'text-white'
+              }`}>
+                {player2?.score !== null 
+                  ? (is67Reps ? formatTime(player2.score!) : player2.score)
+                  : '—'}
+              </p>
+              <p className="text-white/30 text-xs mt-1">
+                {is67Reps ? 'seconds' : 'reps'}
+              </p>
+            </div>
+          </div>
+
+          {/* Waiting Status */}
+          {!bothSubmitted && (
+            <div className="text-center mb-6 py-3 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center gap-2">
+              <svg className="w-4 h-4 text-white/30 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" strokeOpacity="0.3" />
+                <path d="M12 2a10 10 0 0110 10" />
+              </svg>
+              <p className="text-white/50 text-sm">Waiting for both players...</p>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => router.push('/duel/create')}
+              className="w-full py-4 rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-400 font-bold hover:bg-purple-500/30 transition-all flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 8v8M8 12h8" />
+              </svg>
+              CREATE NEW DUEL
+            </button>
+            <button
+              onClick={() => router.push('/')}
+              className="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-white/70 font-semibold hover:bg-white/10 transition-all"
+            >
+              BACK TO HOME
+            </button>
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="mt-6 text-center">
-          <p className="text-white/30 text-xs">67ranked.com</p>
+        <div className="px-6 py-3 border-t border-white/5 flex items-center justify-between text-white/20 text-xs">
+          <span>DUEL #{duelId.slice(0, 8).toUpperCase()}</span>
+          <span>67RANKED.COM</span>
         </div>
       </div>
     </main>
