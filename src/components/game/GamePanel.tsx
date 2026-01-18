@@ -27,6 +27,7 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
   const sessionTokenRef = useRef<string | null>(null);
   const gameEndedRef = useRef<boolean>(false);
   const finishTimeRef = useRef<number>(0);
+  const gameModeRef = useRef<{ is67Reps: boolean; duration: number }>({ is67Reps: false, duration: 0 });
   
   // State
   const [gameState, setGameState] = useState<GameState>('idle');
@@ -215,6 +216,9 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
     const is67Reps = is67RepsMode(duration);
     const gameDuration = is67Reps ? 0 : duration;
     
+    // Store in ref to avoid stale closure issues
+    gameModeRef.current = { is67Reps, duration };
+    
     setTimeRemaining(gameDuration);
     setElapsedTime(0);
     gameStartTimeRef.current = performance.now();
@@ -228,40 +232,40 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
       }
       
       const elapsed = performance.now() - gameStartTimeRef.current;
+      const { is67Reps: currentIs67Reps, duration: currentDuration } = gameModeRef.current;
       
-      // Update time display
-      setElapsedTime(elapsed);
-      if (!is67Reps) {
-        const remaining = Math.max(0, gameDuration - elapsed);
+      // Update time display based on mode
+      if (currentIs67Reps) {
+        // 67 reps mode: show elapsed time (counting up)
+        setElapsedTime(elapsed);
+      } else {
+        // Timed mode: show remaining time (counting down)
+        const remaining = Math.max(0, currentDuration - elapsed);
         setTimeRemaining(remaining);
       }
       
-      // Process reps - but stop counting once we hit 67 in that mode
-      if (trackerRef.current && !(is67Reps && repCountRef.current >= 67)) {
+      // Process reps
+      if (trackerRef.current) {
         trackerRef.current.processGameplay(null, null);
         const currentReps = trackerRef.current.getRepCount();
+        repCountRef.current = currentReps;
+        setDisplayRepCount(currentReps);
         
-        // In 67 reps mode, cap at exactly 67
-        if (is67Reps && currentReps >= 67) {
-          repCountRef.current = 67;
-          setDisplayRepCount(67);
-          // Capture the exact finish time
+        // In 67 reps mode, check if we hit 67
+        if (currentIs67Reps && currentReps >= 67) {
           finishTimeRef.current = elapsed;
           gameEndedRef.current = true;
-          endGame(elapsed);
+          endGame(elapsed, true); // Pass flag indicating 67 reps mode
           return;
-        } else {
-          repCountRef.current = currentReps;
-          setDisplayRepCount(currentReps);
         }
       }
       
       // Check end conditions for timed modes
-      if (!is67Reps) {
-        const remaining = Math.max(0, gameDuration - elapsed);
+      if (!currentIs67Reps) {
+        const remaining = Math.max(0, currentDuration - elapsed);
         if (remaining <= 0) {
           gameEndedRef.current = true;
-          endGame();
+          endGame(undefined, false); // Pass flag indicating timed mode
           return;
         }
       }
@@ -272,23 +276,26 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
     animationFrameRef.current = requestAnimationFrame(gameLoop);
   };
 
-  // End game
-  const endGame = (finalElapsedMs?: number) => {
+  // End game - pass is67Reps explicitly to avoid state timing issues
+  const endGame = (finalElapsedMs?: number, is67Reps?: boolean) => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
     
-    if (is67RepsMode(duration)) {
+    // Use the passed flag or fall back to ref (never rely on state here)
+    const wasSpeedrunMode = is67Reps ?? gameModeRef.current.is67Reps;
+    
+    if (wasSpeedrunMode) {
       // 67 reps mode: score is the elapsed time in ms
-      // Use the captured finish time, not current time
       const elapsed = finalElapsedMs ?? finishTimeRef.current ?? (performance.now() - gameStartTimeRef.current);
       const roundedElapsed = Math.round(elapsed);
       setFinalScore(roundedElapsed);
-      setElapsedTime(roundedElapsed); // Use rounded value for consistency
+      setElapsedTime(roundedElapsed);
+      setDisplayRepCount(67); // Ensure display shows 67
     } else {
       // Timed mode: score is the rep count
-      const score = trackerRef.current?.getRepCount() || 0;
+      const score = repCountRef.current; // Use ref, not tracker (might be cleaned up)
       setFinalScore(score);
     }
     
