@@ -39,7 +39,7 @@ export default function Home() {
       <Header playerCount={stats?.totalGames} />
 
       {/* Main content - use dvh for mobile browsers with dynamic viewport */}
-      <div className="h-screen h-dvh flex flex-col lg:flex-row pt-11 sm:pt-12 pb-1 overflow-hidden">
+      <div className="h-screen h-dvh flex flex-col lg:flex-row pt-14 sm:pt-12 pb-1 overflow-hidden">
         {/* Game Panel - constrained on mobile to leave room for leaderboard */}
         <div className="flex-shrink-0 h-[55%] sm:h-[60%] lg:h-auto lg:flex-1 p-1 sm:p-2 lg:p-3 flex items-center justify-center">
           <GamePanel onScoreSubmitted={handleScoreSubmitted} />
