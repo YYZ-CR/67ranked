@@ -463,7 +463,7 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
               myUsername: ''
             }}
             duration={duration}
-            elapsedTime={is67RepsMode(duration) ? elapsedTime : undefined}
+            elapsedTime={is67RepsMode(duration) ? finalScore : undefined}
             mode={gameMode}
             onSubmit={handleSubmit}
             onPlayAgain={handlePlayAgain}
