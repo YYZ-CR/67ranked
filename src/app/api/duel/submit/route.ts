@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { verifySessionToken, validateSubmissionTiming } from '@/lib/jwt';
 import { checkRateLimit, createRateLimitKey } from '@/lib/rate-limit';
+import { is67RepsMode } from '@/types/game';
 
 export async function POST(request: NextRequest) {
   try {
@@ -86,14 +87,30 @@ export async function POST(request: NextRequest) {
         .update({ status: 'complete' })
         .eq('id', payload.duel_id);
 
+      // Get duel info to check mode
+      const { data: duel } = await supabase
+        .from('duels')
+        .select('duration_ms')
+        .eq('id', payload.duel_id)
+        .single();
+
+      const is67Reps = duel && is67RepsMode(duel.duration_ms);
+
       // Determine winner
       const myPlayer = players.find(p => p.player_key === payload.player_key);
       const opponent = players.find(p => p.player_key !== payload.player_key);
 
       let outcome: 'win' | 'lose' | 'tie' = 'tie';
       if (myPlayer && opponent && myPlayer.score !== null && opponent.score !== null) {
-        if (myPlayer.score > opponent.score) outcome = 'win';
-        else if (myPlayer.score < opponent.score) outcome = 'lose';
+        if (is67Reps) {
+          // 67 reps mode: lower time (score) wins
+          if (myPlayer.score < opponent.score) outcome = 'win';
+          else if (myPlayer.score > opponent.score) outcome = 'lose';
+        } else {
+          // Timed mode: higher reps (score) wins
+          if (myPlayer.score > opponent.score) outcome = 'win';
+          else if (myPlayer.score < opponent.score) outcome = 'lose';
+        }
       }
 
       return NextResponse.json({

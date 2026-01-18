@@ -7,6 +7,7 @@ import { HandTracker, RepCounter, CalibrationTracker } from '@/lib/hand-tracking
 import { CalibrationOverlay } from '@/components/game/CalibrationOverlay';
 import { CountdownOverlay } from '@/components/game/CountdownOverlay';
 import { GameOverlay } from '@/components/game/GameOverlay';
+import { is67RepsMode } from '@/types/game';
 
 interface DuelData {
   id: string;
@@ -56,6 +57,8 @@ export default function DuelPage() {
   const [shareUrl, setShareUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [displayRepCount, setDisplayRepCount] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const gameEndedRef = useRef(false);
 
   // Keep duel ref in sync
   useEffect(() => {
@@ -194,13 +197,23 @@ export default function DuelPage() {
   };
 
   // End game callback
-  const endGame = useCallback(async () => {
+  const endGame = useCallback(async (finalElapsedMs?: number) => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
 
-    // Use the tracker's internal rep count
-    const score = trackerRef.current?.getRepCount() || repCountRef.current || 0;
+    const currentDuel = duelDataRef.current;
+    const is67Reps = currentDuel && is67RepsMode(currentDuel.duration_ms);
+
+    // For 67 reps mode, score is the elapsed time in ms
+    // For timed modes, score is the rep count
+    let score: number;
+    if (is67Reps) {
+      score = finalElapsedMs || elapsedTime;
+      setDisplayRepCount(67);
+    } else {
+      score = trackerRef.current?.getRepCount() || repCountRef.current || 0;
+    }
     setFinalScore(score);
 
     if (sessionTokenRef.current) {
@@ -228,18 +241,25 @@ export default function DuelPage() {
     }
 
     setPageState('results');
-  }, []);
+  }, [elapsedTime]);
 
   // Start gameplay
   const startGameplay = useCallback(() => {
     const currentDuel = duelDataRef.current;
     if (!currentDuel) return;
 
+    const is67Reps = is67RepsMode(currentDuel.duration_ms);
+
     // Reset using the tracker's internal rep counter
     trackerRef.current?.resetRepCounter();
     repCountRef.current = 0;
     setDisplayRepCount(0);
-    setTimeRemaining(currentDuel.duration_ms);
+    setElapsedTime(0);
+    gameEndedRef.current = false;
+    
+    if (!is67Reps) {
+      setTimeRemaining(currentDuel.duration_ms);
+    }
     setPageState('playing');
 
     const startTime = performance.now();
@@ -247,21 +267,40 @@ export default function DuelPage() {
 
     const gameLoop = () => {
       const elapsed = performance.now() - startTime;
-      const remaining = Math.max(0, durationMs - elapsed);
-      setTimeRemaining(remaining);
+      
+      if (is67Reps) {
+        setElapsedTime(elapsed);
+      } else {
+        const remaining = Math.max(0, durationMs - elapsed);
+        setTimeRemaining(remaining);
+      }
 
       // Use the tracker's built-in pose-based rep counting
-      if (trackerRef.current) {
+      if (trackerRef.current && !gameEndedRef.current) {
         trackerRef.current.processGameplay(null, null);
         const currentReps = trackerRef.current.getRepCount();
         repCountRef.current = currentReps;
         setDisplayRepCount(currentReps);
+
+        // Check if 67 reps reached
+        if (is67Reps && currentReps >= 67) {
+          gameEndedRef.current = true;
+          endGame(Math.round(elapsed));
+          return;
+        }
       }
 
-      if (remaining > 0) {
+      if (is67Reps) {
+        // 67 reps mode continues until 67 reps are hit
         animationFrameRef.current = requestAnimationFrame(gameLoop);
       } else {
-        endGame();
+        // Timed modes end when time runs out
+        const remaining = Math.max(0, durationMs - elapsed);
+        if (remaining > 0) {
+          animationFrameRef.current = requestAnimationFrame(gameLoop);
+        } else {
+          endGame();
+        }
       }
     };
 
@@ -405,9 +444,13 @@ export default function DuelPage() {
           </p>
 
           <div className="mb-4 p-4 bg-white/5 rounded-xl text-center">
-            <p className="text-white/50 text-sm">Duration</p>
+            <p className="text-white/50 text-sm">Mode</p>
             <p className="text-2xl font-bold text-white">
-              {duel?.duration_ms ? `${(duel.duration_ms / 1000).toFixed(1)}s` : '...'}
+              {duel?.duration_ms 
+                ? is67RepsMode(duel.duration_ms) 
+                  ? '67 Reps ⚡' 
+                  : `${(duel.duration_ms / 1000).toFixed(1)}s`
+                : '...'}
             </p>
           </div>
 
@@ -561,50 +604,65 @@ export default function DuelPage() {
           <GameOverlay
             repCount={displayRepCount}
             timeRemaining={timeRemaining}
+            elapsedTime={elapsedTime}
+            is67RepsMode={duel ? is67RepsMode(duel.duration_ms) : false}
             trackingLost={trackingLost}
           />
         )}
 
-        {pageState === 'results' && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-            <div className="glass-panel p-6 rounded-2xl text-center">
-              <div className={`text-4xl font-black mb-4 ${
-                result?.outcome === 'win' ? 'text-accent-green' :
-                result?.outcome === 'lose' ? 'text-red-400' : 'text-yellow-400'
-              }`}>
-                {result?.outcome === 'win' ? '🎉 YOU WIN!' :
-                 result?.outcome === 'lose' ? '😔 YOU LOSE' : '🤝 TIE!'}
-              </div>
-
-              <div className="flex justify-center gap-8 mb-6">
-                <div className="text-center">
-                  <p className="text-white/60 text-sm">You</p>
-                  <p className="text-3xl font-bold text-white">{finalScore}</p>
+        {pageState === 'results' && (() => {
+          const is67Reps = duel && is67RepsMode(duel.duration_ms);
+          const formatTime = (ms: number) => (ms / 1000).toFixed(2) + 's';
+          
+          return (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+              <div className="glass-panel p-6 rounded-2xl text-center">
+                <div className={`text-4xl font-black mb-4 ${
+                  result?.outcome === 'win' ? 'text-accent-green' :
+                  result?.outcome === 'lose' ? 'text-red-400' : 'text-yellow-400'
+                }`}>
+                  {result?.outcome === 'win' ? '🎉 YOU WIN!' :
+                   result?.outcome === 'lose' ? '😔 YOU LOSE' : '🤝 TIE!'}
                 </div>
-                <div className="text-white/40 text-2xl self-center">vs</div>
-                <div className="text-center">
-                  <p className="text-white/60 text-sm">Opponent</p>
-                  <p className="text-3xl font-bold text-white">{result?.opponentScore ?? '...'}</p>
-                </div>
-              </div>
 
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => router.push('/duel/create')}
-                  className="px-6 py-3 rounded-xl bg-purple-500 text-white font-semibold hover:bg-purple-600"
-                >
-                  🔄 Rematch
-                </button>
-                <button
-                  onClick={() => router.push('/')}
-                  className="px-6 py-3 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/20"
-                >
-                  Back to Home
-                </button>
+                <div className="flex justify-center gap-8 mb-6">
+                  <div className="text-center">
+                    <p className="text-white/60 text-sm">You</p>
+                    <p className="text-3xl font-bold text-white">
+                      {is67Reps ? formatTime(finalScore) : finalScore}
+                    </p>
+                    {is67Reps && <p className="text-white/40 text-xs">67 reps</p>}
+                  </div>
+                  <div className="text-white/40 text-2xl self-center">vs</div>
+                  <div className="text-center">
+                    <p className="text-white/60 text-sm">Opponent</p>
+                    <p className="text-3xl font-bold text-white">
+                      {result?.opponentScore != null 
+                        ? (is67Reps ? formatTime(result.opponentScore) : result.opponentScore)
+                        : '...'}
+                    </p>
+                    {is67Reps && result?.opponentScore != null && <p className="text-white/40 text-xs">67 reps</p>}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => router.push('/duel/create')}
+                    className="px-6 py-3 rounded-xl bg-purple-500 text-white font-semibold hover:bg-purple-600"
+                  >
+                    🔄 Rematch
+                  </button>
+                  <button
+                    onClick={() => router.push('/')}
+                    className="px-6 py-3 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/20"
+                  >
+                    Back to Home
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
     </main>
   );

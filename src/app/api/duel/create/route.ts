@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { validateUsername } from '@/lib/profanity';
-import { MIN_CUSTOM_DURATION, MAX_CUSTOM_DURATION } from '@/types/game';
+import { MIN_CUSTOM_DURATION, MAX_CUSTOM_DURATION, DURATION_67_REPS, is67RepsMode } from '@/types/game';
 import { randomUUID } from 'crypto';
 
 const DUEL_EXPIRY_MINUTES = 15;
@@ -26,9 +26,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'duration_ms is required' }, { status: 400 });
     }
 
-    if (duration_ms < MIN_CUSTOM_DURATION || duration_ms > MAX_CUSTOM_DURATION) {
+    // Allow 67 reps mode (-1) or regular durations
+    const is67Reps = is67RepsMode(duration_ms);
+    if (!is67Reps && (duration_ms < MIN_CUSTOM_DURATION || duration_ms > MAX_CUSTOM_DURATION)) {
       return NextResponse.json(
-        { error: `duration_ms must be between ${MIN_CUSTOM_DURATION}ms and ${MAX_CUSTOM_DURATION}ms` },
+        { error: `duration_ms must be between ${MIN_CUSTOM_DURATION}ms and ${MAX_CUSTOM_DURATION}ms, or -1 for 67 reps` },
         { status: 400 }
       );
     }
