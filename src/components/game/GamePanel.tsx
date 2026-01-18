@@ -207,23 +207,23 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
     trackerRef.current?.resetRepCounter();
     repCountRef.current = 0;
     setDisplayRepCount(0);
-    setTimeRemaining(is67RepsMode(duration) ? 0 : duration);
+    
+    const is67Reps = is67RepsMode(duration);
+    const gameDuration = is67Reps ? 0 : duration;
+    
+    setTimeRemaining(gameDuration);
     setElapsedTime(0);
     gameStartTimeRef.current = performance.now();
     setGameState('playing');
-    
-    const is67Reps = is67RepsMode(duration);
     
     // Start game loop
     const gameLoop = () => {
       const elapsed = performance.now() - gameStartTimeRef.current;
       
-      // Always update elapsed time for 67 reps mode
-      if (is67Reps) {
-        setElapsedTime(elapsed);
-      } else {
-        // Timed mode: timer counts DOWN
-        const remaining = Math.max(0, duration - elapsed);
+      // Always update both time values
+      setElapsedTime(elapsed);
+      if (!is67Reps) {
+        const remaining = Math.max(0, gameDuration - elapsed);
         setTimeRemaining(remaining);
       }
       
@@ -245,7 +245,7 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
         }
       } else {
         // Timed mode: end when time runs out
-        const remaining = Math.max(0, duration - elapsed);
+        const remaining = Math.max(0, gameDuration - elapsed);
         if (remaining <= 0) {
           endGame();
           return;
