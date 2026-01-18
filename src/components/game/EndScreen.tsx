@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { GameResult, DURATION_6_7S, DURATION_20S } from '@/types/game';
+import { useState, useEffect } from 'react';
+import { GameResult, DURATION_6_7S, DURATION_20S, DURATION_67_REPS, is67RepsMode } from '@/types/game';
 
 interface EndScreenProps {
   result: GameResult;
   duration: number;
+  elapsedTime?: number; // For 67 reps mode - the time in ms
   mode: 'normal' | 'duel' | 'challenge';
   onSubmit: (username: string) => Promise<void>;
   onPlayAgain: () => void;
@@ -13,24 +14,34 @@ interface EndScreenProps {
   isSubmitting?: boolean;
   submitError?: string | null;
   isSubmitted?: boolean;
+  scoreId?: string; // For sharing
 }
 
 export function EndScreen({
   result,
   duration,
+  elapsedTime,
   mode,
   onSubmit,
   onPlayAgain,
   onRematch,
   isSubmitting = false,
   submitError = null,
-  isSubmitted = false
+  isSubmitted = false,
+  scoreId
 }: EndScreenProps) {
   const [username, setUsername] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  // Load last username from localStorage
+  useEffect(() => {
+    const savedUsername = localStorage.getItem('67ranked_lastUsername');
+    if (savedUsername) setUsername(savedUsername);
+  }, []);
+
+  const is67Reps = is67RepsMode(duration);
   const canSubmitToLeaderboard = mode === 'normal' && 
-    (duration === DURATION_6_7S || duration === DURATION_20S);
+    (duration === DURATION_6_7S || duration === DURATION_20S || is67Reps);
 
   const validateUsername = (value: string): boolean => {
     if (!value || value.length < 1) {
@@ -58,6 +69,8 @@ export function EndScreen({
 
   const handleSubmit = async () => {
     if (validateUsername(username)) {
+      // Save username to localStorage
+      localStorage.setItem('67ranked_lastUsername', username);
       await onSubmit(username);
     }
   };
@@ -65,7 +78,38 @@ export function EndScreen({
   const formatDuration = (ms: number) => {
     if (ms === DURATION_6_7S) return '6.7s';
     if (ms === DURATION_20S) return '20s';
+    if (ms === DURATION_67_REPS) return '67 Reps';
     return `${(ms / 1000).toFixed(1)}s`;
+  };
+
+  const formatElapsedTime = (ms: number) => {
+    return (ms / 1000).toFixed(2);
+  };
+
+  const handleShare = async () => {
+    const shareText = is67Reps
+      ? `${username || 'Someone'} got 67 reps in ${formatElapsedTime(elapsedTime || 0)}s on 67ranked.com. Can you beat their score?`
+      : `${username || 'Someone'} scored ${result.myScore} reps on 67ranked.com. Can you beat their score?`;
+    
+    const shareUrl = scoreId 
+      ? `${window.location.origin}/score/${scoreId}`
+      : window.location.origin;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: '67Ranked Score',
+          text: shareText,
+          url: shareUrl
+        });
+      } catch {
+        // User cancelled or share failed
+      }
+    } else {
+      // Fallback to clipboard
+      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+      alert('Score copied to clipboard!');
+    }
   };
 
   return (
@@ -73,11 +117,25 @@ export function EndScreen({
       <div className="glass-panel p-6 rounded-2xl max-w-sm w-full mx-4 text-center">
         {/* Score display */}
         <div className="mb-6">
-          <p className="text-white/60 text-sm mb-1">Your Score</p>
-          <p className="text-6xl font-black text-white mb-2">{result.myScore}</p>
-          <p className="text-white/50 text-sm">
-            reps in {formatDuration(duration)}
-          </p>
+          {is67Reps ? (
+            <>
+              <p className="text-white/60 text-sm mb-1">67 Reps Completed!</p>
+              <p className="text-6xl font-black text-accent-green mb-2">
+                {formatElapsedTime(elapsedTime || 0)}s
+              </p>
+              <p className="text-white/50 text-sm">
+                Speedrun time
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-white/60 text-sm mb-1">Your Score</p>
+              <p className="text-6xl font-black text-white mb-2">{result.myScore}</p>
+              <p className="text-white/50 text-sm">
+                reps in {formatDuration(duration)}
+              </p>
+            </>
+          )}
         </div>
 
         {/* VS Result for Duel/Challenge */}
@@ -153,6 +211,17 @@ export function EndScreen({
               {isSubmitting ? 'Saving...' : 'Save Score'}
             </button>
           )}
+
+          {/* Share button */}
+          <button
+            onClick={handleShare}
+            className="w-full py-3 rounded-xl bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-all flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            Share
+          </button>
           
           {onRematch && (
             <button

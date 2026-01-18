@@ -14,8 +14,14 @@ export type GameState =
 // Duration options (in milliseconds)
 export const DURATION_6_7S = 6700;
 export const DURATION_20S = 20000;
+export const DURATION_67_REPS = -1; // Special marker for 67 reps speedrun mode
 
-export const STANDARD_DURATIONS = [DURATION_6_7S, DURATION_20S] as const;
+export const STANDARD_DURATIONS = [DURATION_6_7S, DURATION_20S, DURATION_67_REPS] as const;
+
+// Check if this is the 67 reps speedrun mode
+export function is67RepsMode(duration: number): boolean {
+  return duration === DURATION_67_REPS;
+}
 
 // Validation constants
 export const MIN_CUSTOM_DURATION = 5000;   // 5 seconds

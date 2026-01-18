@@ -1,7 +1,7 @@
 'use client';
 
 import { useLeaderboard } from '@/hooks/useLeaderboard';
-import { DURATION_6_7S, DURATION_20S } from '@/types/game';
+import { DURATION_6_7S, DURATION_20S, DURATION_67_REPS, is67RepsMode } from '@/types/game';
 
 interface LeaderboardPanelProps {
   refreshTrigger?: number;
@@ -15,6 +15,8 @@ export function LeaderboardPanel({ refreshTrigger }: LeaderboardPanelProps) {
     // The useEffect is handled inside useLeaderboard
   }
 
+  const is67Reps = is67RepsMode(selectedDuration);
+
   return (
     <div className="h-full flex flex-col bg-gray-900/50 rounded-2xl overflow-hidden">
       {/* Header with toggle */}
@@ -26,7 +28,7 @@ export function LeaderboardPanel({ refreshTrigger }: LeaderboardPanelProps) {
           <button
             onClick={() => setSelectedDuration(DURATION_6_7S)}
             className={`
-              flex-1 py-2 px-4 rounded-xl font-semibold text-sm transition-all
+              flex-1 py-2 px-3 rounded-xl font-semibold text-sm transition-all
               ${selectedDuration === DURATION_6_7S
                 ? 'bg-accent-green text-black'
                 : 'bg-white/10 text-white hover:bg-white/20'
@@ -38,7 +40,7 @@ export function LeaderboardPanel({ refreshTrigger }: LeaderboardPanelProps) {
           <button
             onClick={() => setSelectedDuration(DURATION_20S)}
             className={`
-              flex-1 py-2 px-4 rounded-xl font-semibold text-sm transition-all
+              flex-1 py-2 px-3 rounded-xl font-semibold text-sm transition-all
               ${selectedDuration === DURATION_20S
                 ? 'bg-accent-green text-black'
                 : 'bg-white/10 text-white hover:bg-white/20'
@@ -46,6 +48,18 @@ export function LeaderboardPanel({ refreshTrigger }: LeaderboardPanelProps) {
             `}
           >
             20s
+          </button>
+          <button
+            onClick={() => setSelectedDuration(DURATION_67_REPS)}
+            className={`
+              flex-1 py-2 px-3 rounded-xl font-semibold text-sm transition-all
+              ${selectedDuration === DURATION_67_REPS
+                ? 'bg-accent-green text-black'
+                : 'bg-white/10 text-white hover:bg-white/20'
+              }
+            `}
+          >
+            67 Reps
           </button>
         </div>
       </div>
@@ -79,6 +93,7 @@ export function LeaderboardPanel({ refreshTrigger }: LeaderboardPanelProps) {
                 score={entry.score}
                 isTop3={entry.rank <= 3}
                 index={index}
+                is67RepsMode={is67Reps}
               />
             ))}
           </div>
@@ -101,9 +116,10 @@ interface LeaderboardRowProps {
   score: number;
   isTop3: boolean;
   index: number;
+  is67RepsMode?: boolean;
 }
 
-function LeaderboardRow({ rank, username, score, isTop3, index }: LeaderboardRowProps) {
+function LeaderboardRow({ rank, username, score, isTop3, index, is67RepsMode = false }: LeaderboardRowProps) {
   const getRankEmoji = (rank: number) => {
     switch (rank) {
       case 1: return '🥇';
@@ -114,6 +130,9 @@ function LeaderboardRow({ rank, username, score, isTop3, index }: LeaderboardRow
   };
 
   const emoji = getRankEmoji(rank);
+  
+  // Format time for 67 reps mode (score is in ms)
+  const formatTime = (ms: number) => (ms / 1000).toFixed(2);
 
   return (
     <div 
@@ -150,9 +169,9 @@ function LeaderboardRow({ rank, username, score, isTop3, index }: LeaderboardRow
           font-bold tabular-nums
           ${isTop3 ? 'text-accent-green text-lg' : 'text-white'}
         `}>
-          {score}
+          {is67RepsMode ? formatTime(score) : score}
         </span>
-        <span className="text-white/40 text-xs ml-1">reps</span>
+        <span className="text-white/40 text-xs ml-1">{is67RepsMode ? 's' : 'reps'}</span>
       </div>
     </div>
   );

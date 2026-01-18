@@ -3,7 +3,7 @@ import { verifySessionToken, validateSubmissionTiming } from '@/lib/jwt';
 import { validateUsername } from '@/lib/profanity';
 import { checkRateLimit, createRateLimitKey } from '@/lib/rate-limit';
 import { createServerClient } from '@/lib/supabase/server';
-import { DURATION_6_7S, DURATION_20S } from '@/types/game';
+import { DURATION_6_7S, DURATION_20S, DURATION_67_REPS, is67RepsMode } from '@/types/game';
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,16 +40,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token mode for this endpoint' }, { status: 400 });
     }
 
-    // Validate timing
-    const timingValidation = validateSubmissionTiming(payload, Date.now());
-    if (!timingValidation.valid) {
-      return NextResponse.json({ error: timingValidation.reason }, { status: 400 });
+    // For 67 reps mode, we have different timing validation (no fixed duration)
+    const is67Reps = is67RepsMode(payload.duration_ms);
+    
+    if (!is67Reps) {
+      // Validate timing for timed modes
+      const timingValidation = validateSubmissionTiming(payload, Date.now());
+      if (!timingValidation.valid) {
+        return NextResponse.json({ error: timingValidation.reason }, { status: 400 });
+      }
     }
 
     // Only allow leaderboard submissions for standard durations
-    if (payload.duration_ms !== DURATION_6_7S && payload.duration_ms !== DURATION_20S) {
+    if (payload.duration_ms !== DURATION_6_7S && payload.duration_ms !== DURATION_20S && payload.duration_ms !== DURATION_67_REPS) {
       return NextResponse.json(
-        { error: 'Only 6.7s and 20s rounds can be submitted to the leaderboard' },
+        { error: 'Only 6.7s, 20s, and 67 Reps rounds can be submitted to the leaderboard' },
         { status: 400 }
       );
     }
@@ -69,6 +74,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert score into database
+    // For 67 reps mode, score is elapsed time in ms
+    // For timed modes, score is rep count
     const supabase = createServerClient();
     const { data, error: dbError } = await supabase
       .from('scores')

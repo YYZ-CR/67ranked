@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { GameState, GameMode, DURATION_6_7S } from '@/types/game';
+import { GameState, GameMode, DURATION_6_7S, DURATION_67_REPS, is67RepsMode } from '@/types/game';
 import { HandTracker, TrackingState, CalibrationTracker } from '@/lib/hand-tracking';
 import { StartScreen } from './StartScreen';
 import { CalibrationOverlay } from './CalibrationOverlay';
@@ -34,10 +34,12 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [countdownValue, setCountdownValue] = useState<number>(3);
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [finalScore, setFinalScore] = useState<number>(0);
+  const [scoreId, setScoreId] = useState<string | null>(null);
   
   // Container size for responsive canvas
   const [containerSize, setContainerSize] = useState(400);
@@ -203,48 +205,76 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
     // Reset the tracker's internal rep counter
     trackerRef.current?.resetRepCounter();
     repCountRef.current = 0;
-    setTimeRemaining(duration);
+    setTimeRemaining(is67RepsMode(duration) ? 0 : duration);
+    setElapsedTime(0);
     gameStartTimeRef.current = performance.now();
     setGameState('playing');
+    
+    const is67Reps = is67RepsMode(duration);
     
     // Start game loop
     const gameLoop = () => {
       const elapsed = performance.now() - gameStartTimeRef.current;
-      const remaining = Math.max(0, duration - elapsed);
-      setTimeRemaining(remaining);
+      
+      if (is67Reps) {
+        // 67 reps mode: timer counts UP
+        setElapsedTime(elapsed);
+      } else {
+        // Timed mode: timer counts DOWN
+        const remaining = Math.max(0, duration - elapsed);
+        setTimeRemaining(remaining);
+      }
       
       // Process reps - the tracker handles everything internally with pose data
       if (trackerRef.current) {
-        // Call processGameplay - it uses pose wrist data internally
         trackerRef.current.processGameplay(null, null);
-        // Always read the current rep count (not just when one completes)
         repCountRef.current = trackerRef.current.getRepCount();
       }
       
-      if (remaining > 0) {
-        animationFrameRef.current = requestAnimationFrame(gameLoop);
+      // Check end conditions
+      if (is67Reps) {
+        // 67 reps mode: end when we hit 67 reps
+        if (repCountRef.current >= 67) {
+          endGame(elapsed);
+          return;
+        }
       } else {
-        endGame();
+        // Timed mode: end when time runs out
+        const remaining = Math.max(0, duration - elapsed);
+        if (remaining <= 0) {
+          endGame();
+          return;
+        }
       }
+      
+      animationFrameRef.current = requestAnimationFrame(gameLoop);
     };
     
     animationFrameRef.current = requestAnimationFrame(gameLoop);
   };
 
   // End game
-  const endGame = () => {
+  const endGame = (finalElapsedMs?: number) => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
     
-    // Get score from tracker's internal rep counter
-    const score = trackerRef.current?.getRepCount() || 0;
-    setFinalScore(score);
+    if (is67RepsMode(duration)) {
+      // 67 reps mode: score is the elapsed time in ms
+      const elapsed = finalElapsedMs || (performance.now() - gameStartTimeRef.current);
+      setFinalScore(Math.round(elapsed));
+      setElapsedTime(elapsed);
+    } else {
+      // Timed mode: score is the rep count
+      const score = trackerRef.current?.getRepCount() || 0;
+      setFinalScore(score);
+    }
+    
     setGameState('ended');
     setIsSubmitted(false);
     setSubmitError(null);
     
-    // Play end sound (user interaction safe since game was started by user)
+    // Play end sound
     playEndSound();
   };
 
@@ -303,6 +333,8 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
         throw new Error(data.error || 'Failed to submit score');
       }
       
+      const data = await response.json();
+      setScoreId(data.scoreId);
       setIsSubmitted(true);
       onScoreSubmitted?.();
     } catch (err) {
@@ -315,6 +347,7 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
   // Play again
   const handlePlayAgain = () => {
     sessionTokenRef.current = null;
+    setScoreId(null);
     setGameState('selecting');
     calibrationTrackerRef.current?.reset();
   };
@@ -336,7 +369,7 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
     >
       {/* Camera container */}
       <div 
-        className="relative overflow-hidden rounded-2xl bg-gray-900"
+        className="relative overflow-hidden rounded-2xl bg-gray-900 ring-2 ring-accent-green/30 shadow-[0_0_30px_rgba(74,222,128,0.15)]"
         style={{ width: containerSize, height: containerSize }}
       >
         {/* Hidden video for MediaPipe */}
@@ -388,6 +421,8 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
           <GameOverlay
             repCount={repCountRef.current}
             timeRemaining={timeRemaining}
+            elapsedTime={elapsedTime}
+            is67RepsMode={is67RepsMode(duration)}
             trackingLost={!trackingState?.bothHandsDetected}
           />
         )}
@@ -395,16 +430,18 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
         {gameState === 'ended' && (
           <EndScreen
             result={{
-              myScore: finalScore,
+              myScore: is67RepsMode(duration) ? 67 : finalScore,
               myUsername: ''
             }}
             duration={duration}
+            elapsedTime={is67RepsMode(duration) ? finalScore : undefined}
             mode={gameMode}
             onSubmit={handleSubmit}
             onPlayAgain={handlePlayAgain}
             isSubmitting={isSubmitting}
             submitError={submitError}
             isSubmitted={isSubmitted}
+            scoreId={scoreId || undefined}
           />
         )}
       </div>

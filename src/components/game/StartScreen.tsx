@@ -28,14 +28,17 @@ export function StartScreen({ onStart, error, onRetry }: StartScreenProps) {
   }
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center">
+    <div className="absolute inset-0 flex items-center justify-center bg-black/60">
       <div className="text-center">
         {/* Logo/Title */}
-        <h1 className="text-5xl font-black text-white mb-2">
-          <span className="text-accent-green">67</span>Ranked
-        </h1>
-        <p className="text-white/60 mb-8">
-          Count 67 reps as fast as you can!
+        <div className="flex items-center justify-center gap-3 mb-2">
+          <div className="w-12 h-12 bg-accent-green rounded-xl flex items-center justify-center">
+            <span className="text-2xl font-black text-black">67</span>
+          </div>
+          <h1 className="text-4xl font-black text-white">RANKED</h1>
+        </div>
+        <p className="text-white/60 mb-8 text-sm">
+          Move your hands to compete globally
         </p>
         
         {/* Start button */}
@@ -50,16 +53,16 @@ export function StartScreen({ onStart, error, onRetry }: StartScreenProps) {
             active:scale-95
             transition-all duration-200
             shadow-lg shadow-accent-green/30
+            animate-pulse-glow
           "
         >
-          Start Game
+          ▶ Start
         </button>
         
         {/* Instructions */}
         <div className="mt-8 max-w-xs mx-auto">
-          <p className="text-white/40 text-sm">
-            Alternate your hands up and down to count reps.
-            One full cycle = 1 rep.
+          <p className="text-white/40 text-xs">
+            Alternate your hands up and down to count reps
           </p>
         </div>
       </div>

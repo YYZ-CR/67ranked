@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSessionToken } from '@/lib/jwt';
-import { MIN_CUSTOM_DURATION, MAX_CUSTOM_DURATION } from '@/types/game';
+import { MIN_CUSTOM_DURATION, MAX_CUSTOM_DURATION, DURATION_67_REPS } from '@/types/game';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,9 +15,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (duration_ms < MIN_CUSTOM_DURATION || duration_ms > MAX_CUSTOM_DURATION) {
+    // Allow DURATION_67_REPS (-1) or valid custom durations
+    const is67RepsMode = duration_ms === DURATION_67_REPS;
+    if (!is67RepsMode && (duration_ms < MIN_CUSTOM_DURATION || duration_ms > MAX_CUSTOM_DURATION)) {
       return NextResponse.json(
-        { error: `duration_ms must be between ${MIN_CUSTOM_DURATION}ms and ${MAX_CUSTOM_DURATION}ms` },
+        { error: `duration_ms must be ${DURATION_67_REPS} (67 reps mode) or between ${MIN_CUSTOM_DURATION}ms and ${MAX_CUSTOM_DURATION}ms` },
         { status: 400 }
       );
     }

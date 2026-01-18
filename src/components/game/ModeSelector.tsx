@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { GameMode, DURATION_6_7S, DURATION_20S, MIN_CUSTOM_DURATION, MAX_CUSTOM_DURATION } from '@/types/game';
+import { useState, useEffect } from 'react';
+import { GameMode, DURATION_6_7S, DURATION_20S, DURATION_67_REPS, MIN_CUSTOM_DURATION, MAX_CUSTOM_DURATION } from '@/types/game';
 
 interface ModeSelectorProps {
   onSelect: (mode: GameMode, duration: number) => void;
@@ -13,6 +13,21 @@ export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
   const [duration, setDuration] = useState<number>(DURATION_6_7S);
   const [customSeconds, setCustomSeconds] = useState<string>('10.0');
   const [showCustom, setShowCustom] = useState(false);
+
+  // Load last used settings from localStorage
+  useEffect(() => {
+    const savedMode = localStorage.getItem('67ranked_lastMode') as GameMode | null;
+    const savedDuration = localStorage.getItem('67ranked_lastDuration');
+    if (savedMode) setMode(savedMode);
+    if (savedDuration) {
+      const d = parseInt(savedDuration, 10);
+      setDuration(d);
+      if (d !== DURATION_6_7S && d !== DURATION_20S && d !== DURATION_67_REPS) {
+        setShowCustom(true);
+        setCustomSeconds((d / 1000).toFixed(1));
+      }
+    }
+  }, []);
 
   const handleDurationSelect = (ms: number) => {
     setDuration(ms);
@@ -35,10 +50,13 @@ export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
   };
 
   const handleStart = () => {
+    // Save to localStorage
+    localStorage.setItem('67ranked_lastMode', mode);
+    localStorage.setItem('67ranked_lastDuration', duration.toString());
     onSelect(mode, duration);
   };
 
-  const isValidDuration = duration >= MIN_CUSTOM_DURATION && duration <= MAX_CUSTOM_DURATION;
+  const isValidDuration = duration === DURATION_67_REPS || (duration >= MIN_CUSTOM_DURATION && duration <= MAX_CUSTOM_DURATION);
 
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black/70">
@@ -78,45 +96,64 @@ export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
 
         {/* Duration Selection */}
         <div className="mb-6">
-          <label className="text-white/70 text-sm mb-2 block">Duration</label>
-          <div className="grid grid-cols-3 gap-2">
+          <label className="text-white/70 text-sm mb-2 block">Game Type</label>
+          <div className="grid grid-cols-3 gap-2 mb-2">
             <button
               onClick={() => handleDurationSelect(DURATION_6_7S)}
               className={`
-                py-3 rounded-xl font-semibold transition-all
+                py-3 rounded-xl font-semibold transition-all text-sm
                 ${duration === DURATION_6_7S && !showCustom
                   ? 'bg-accent-green text-black' 
                   : 'bg-white/10 text-white hover:bg-white/20'
                 }
               `}
             >
-              6.7s
+              <div>6.7s</div>
+              <div className="text-xs opacity-70">Sprint</div>
             </button>
             <button
               onClick={() => handleDurationSelect(DURATION_20S)}
               className={`
-                py-3 rounded-xl font-semibold transition-all
+                py-3 rounded-xl font-semibold transition-all text-sm
                 ${duration === DURATION_20S && !showCustom
                   ? 'bg-accent-green text-black' 
                   : 'bg-white/10 text-white hover:bg-white/20'
                 }
               `}
             >
-              20s
+              <div>20s</div>
+              <div className="text-xs opacity-70">Endurance</div>
             </button>
+            <button
+              onClick={() => handleDurationSelect(DURATION_67_REPS)}
+              className={`
+                py-3 rounded-xl font-semibold transition-all text-sm
+                ${duration === DURATION_67_REPS
+                  ? 'bg-accent-green text-black' 
+                  : 'bg-white/10 text-white hover:bg-white/20'
+                }
+              `}
+            >
+              <div>67 Reps</div>
+              <div className="text-xs opacity-70">Speedrun</div>
+            </button>
+          </div>
+          
+          {/* Custom duration toggle */}
+          {duration !== DURATION_67_REPS && (
             <button
               onClick={handleCustomToggle}
               className={`
-                py-3 rounded-xl font-semibold transition-all
+                w-full py-2 rounded-xl font-semibold transition-all text-sm
                 ${showCustom
                   ? 'bg-accent-green text-black' 
                   : 'bg-white/10 text-white hover:bg-white/20'
                 }
               `}
             >
-              Custom
+              Custom Duration
             </button>
-          </div>
+          )}
 
           {/* Custom duration input */}
           {showCustom && (
