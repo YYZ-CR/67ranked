@@ -812,13 +812,20 @@ export default function DuelPage() {
 
                   {/* Actions */}
                   <div className="space-y-2">
-                    <button
-                      onClick={handleShareResult}
-                      className="w-full py-2.5 rounded-lg bg-accent-green text-black font-semibold text-sm hover:bg-accent-green-dark transition-all flex items-center justify-center gap-2"
-                    >
-                      <ShareIcon />
-                      Share
-                    </button>
+                    {waitingForOpponent ? (
+                      <div className="w-full py-2.5 rounded-lg bg-white/5 border border-white/10 text-white/40 font-medium text-sm flex items-center justify-center gap-2">
+                        <ShareIcon />
+                        <span>Wait for opponent to share</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleShareResult}
+                        className="w-full py-2.5 rounded-lg bg-accent-green text-black font-semibold text-sm hover:bg-accent-green-dark transition-all flex items-center justify-center gap-2"
+                      >
+                        <ShareIcon />
+                        Share
+                      </button>
+                    )}
                     <button
                       onClick={() => router.push('/duel/create')}
                       className="w-full py-2.5 rounded-lg bg-white/10 text-white font-medium text-sm hover:bg-white/20 transition-all flex items-center justify-center gap-2"
