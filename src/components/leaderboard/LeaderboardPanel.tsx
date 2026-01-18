@@ -2,6 +2,7 @@
 
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { DURATION_6_7S, DURATION_20S, DURATION_67_REPS, is67RepsMode } from '@/types/game';
+import { TrophyIcon, MedalIcon, FlameIcon, TimerIcon, TargetIcon } from '@/components/ui/Icons';
 
 interface LeaderboardPanelProps {
   refreshTrigger?: number;
@@ -21,44 +22,50 @@ export function LeaderboardPanel({ refreshTrigger }: LeaderboardPanelProps) {
     <div className="h-full flex flex-col bg-gray-900/50 rounded-2xl overflow-hidden">
       {/* Header with toggle */}
       <div className="flex-shrink-0 p-4 border-b border-white/10">
-        <h2 className="text-xl font-bold text-white mb-3">🏆 Leaderboard</h2>
+        <h2 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
+          <TrophyIcon size={24} className="text-yellow-400" />
+          Leaderboard
+        </h2>
         
         {/* Duration toggle */}
         <div className="flex gap-2">
           <button
             onClick={() => setSelectedDuration(DURATION_6_7S)}
             className={`
-              flex-1 py-2 px-3 rounded-xl font-semibold text-sm transition-all
+              flex-1 py-2 px-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5
               ${selectedDuration === DURATION_6_7S
                 ? 'bg-accent-green text-black'
                 : 'bg-white/10 text-white hover:bg-white/20'
               }
             `}
           >
+            <FlameIcon size={14} />
             6.7s
           </button>
           <button
             onClick={() => setSelectedDuration(DURATION_20S)}
             className={`
-              flex-1 py-2 px-3 rounded-xl font-semibold text-sm transition-all
+              flex-1 py-2 px-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5
               ${selectedDuration === DURATION_20S
                 ? 'bg-accent-green text-black'
                 : 'bg-white/10 text-white hover:bg-white/20'
               }
             `}
           >
+            <TimerIcon size={14} />
             20s
           </button>
           <button
             onClick={() => setSelectedDuration(DURATION_67_REPS)}
             className={`
-              flex-1 py-2 px-3 rounded-xl font-semibold text-sm transition-all
+              flex-1 py-2 px-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5
               ${selectedDuration === DURATION_67_REPS
                 ? 'bg-accent-green text-black'
                 : 'bg-white/10 text-white hover:bg-white/20'
               }
             `}
           >
+            <TargetIcon size={14} />
             67 Reps
           </button>
         </div>
@@ -146,17 +153,6 @@ interface LeaderboardRowProps {
 }
 
 function LeaderboardRow({ rank, username, score, isTop3, index, is67RepsMode = false }: LeaderboardRowProps) {
-  const getRankEmoji = (rank: number) => {
-    switch (rank) {
-      case 1: return '🥇';
-      case 2: return '🥈';
-      case 3: return '🥉';
-      default: return null;
-    }
-  };
-
-  const emoji = getRankEmoji(rank);
-  
   // Format time for 67 reps mode (score is in ms)
   const formatTime = (ms: number) => (ms / 1000).toFixed(2);
 
@@ -171,11 +167,15 @@ function LeaderboardRow({ rank, username, score, isTop3, index, is67RepsMode = f
       }}
     >
       {/* Rank */}
-      <div className="w-10 flex-shrink-0">
-        {emoji ? (
-          <span className="text-xl">{emoji}</span>
+      <div className="w-10 flex-shrink-0 flex items-center">
+        {rank === 1 ? (
+          <MedalIcon size={24} variant="gold" />
+        ) : rank === 2 ? (
+          <MedalIcon size={24} variant="silver" />
+        ) : rank === 3 ? (
+          <MedalIcon size={24} variant="bronze" />
         ) : (
-          <span className="text-white/50 text-sm font-mono">{rank}</span>
+          <span className="text-white/50 text-sm font-mono pl-1">{rank}</span>
         )}
       </div>
 

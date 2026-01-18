@@ -1,5 +1,7 @@
 'use client';
 
+import { PlayIcon } from '@/components/ui/Icons';
+
 interface StartScreenProps {
   onStart: () => void;
   error?: string | null;
@@ -11,7 +13,11 @@ export function StartScreen({ onStart, error, onRetry }: StartScreenProps) {
     return (
       <div className="absolute inset-0 flex items-center justify-center bg-black/80">
         <div className="glass-panel p-6 rounded-2xl max-w-sm w-full mx-4 text-center">
-          <div className="text-5xl mb-4">📷</div>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center">
+            <svg className="w-8 h-8 text-white/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          </div>
           <h3 className="text-xl font-bold text-white mb-2">Camera Error</h3>
           <p className="text-white/70 text-sm mb-4">{error}</p>
           {onRetry && (
@@ -54,9 +60,11 @@ export function StartScreen({ onStart, error, onRetry }: StartScreenProps) {
             transition-all duration-200
             shadow-lg shadow-accent-green/30
             animate-pulse-glow
+            flex items-center justify-center gap-3
           "
         >
-          ▶ Start
+          <PlayIcon size={24} />
+          Start
         </button>
         
         {/* Instructions */}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { is67RepsMode } from '@/types/game';
+import { SwordsIcon, CrownIcon, EqualsIcon, HomeIcon } from '@/components/ui/Icons';
 
 interface DuelData {
   id: string;
@@ -57,13 +58,16 @@ export default function DuelResultsPage() {
     return (
       <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
         <div className="glass-panel p-6 rounded-2xl max-w-md w-full text-center">
-          <div className="text-5xl mb-4">😔</div>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center">
+            <SwordsIcon size={32} className="text-white/50" />
+          </div>
           <h2 className="text-xl font-bold text-white mb-2">Duel Not Found</h2>
           <p className="text-white/70 mb-4">{error || 'This duel does not exist'}</p>
           <button
             onClick={() => router.push('/')}
-            className="px-6 py-3 rounded-xl bg-accent-green text-black font-semibold"
+            className="px-6 py-3 rounded-xl bg-accent-green text-black font-semibold flex items-center justify-center gap-2 w-full"
           >
+            <HomeIcon size={18} />
             Back to Home
           </button>
         </div>
@@ -117,19 +121,27 @@ export default function DuelResultsPage() {
       <div className="glass-panel p-8 rounded-2xl max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-white mb-2">⚔️ Duel Results</h1>
-          <p className="text-white/50 text-sm">{formatDuration(duel.duration_ms)} mode</p>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <SwordsIcon size={28} className="text-white" />
+            <h1 className="text-3xl font-bold text-white">Duel Results</h1>
+          </div>
+          <p className="text-white/50 text-sm uppercase tracking-wider">{formatDuration(duel.duration_ms)} mode</p>
         </div>
 
         {/* Winner Banner */}
         {bothSubmitted && (
-          <div className={`text-center mb-6 py-3 rounded-xl ${
+          <div className={`text-center mb-6 py-3 rounded-xl flex items-center justify-center gap-2 ${
             outcome === 'tie' ? 'bg-yellow-500/20' : 'bg-accent-green/20'
           }`}>
+            {outcome === 'tie' ? (
+              <EqualsIcon size={24} className="text-yellow-400" />
+            ) : (
+              <CrownIcon size={24} className="text-accent-green" />
+            )}
             <p className={`text-2xl font-black ${
               outcome === 'tie' ? 'text-yellow-400' : 'text-accent-green'
             }`}>
-              {outcome === 'tie' ? '🤝 TIE!' : `🎉 ${winner} WINS!`}
+              {outcome === 'tie' ? 'TIE!' : `${winner} WINS!`}
             </p>
           </div>
         )}
@@ -184,8 +196,9 @@ export default function DuelResultsPage() {
 
         {/* Status */}
         {!bothSubmitted && (
-          <div className="text-center mb-6 py-3 bg-white/5 rounded-xl">
-            <p className="text-white/50">⏳ Waiting for both players to finish...</p>
+          <div className="text-center mb-6 py-3 bg-white/5 rounded-xl flex items-center justify-center gap-2">
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <p className="text-white/50">Waiting for both players to finish...</p>
           </div>
         )}
 
@@ -193,14 +206,16 @@ export default function DuelResultsPage() {
         <div className="flex flex-col gap-2">
           <button
             onClick={() => router.push('/duel/create')}
-            className="w-full py-3 rounded-xl bg-purple-500 text-white font-semibold hover:bg-purple-600 transition-all"
+            className="w-full py-3 rounded-xl bg-purple-500 text-white font-semibold hover:bg-purple-600 transition-all flex items-center justify-center gap-2"
           >
-            ⚔️ Start Your Own Duel
+            <SwordsIcon size={20} />
+            Start Your Own Duel
           </button>
           <button
             onClick={() => router.push('/')}
-            className="w-full py-3 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/20 transition-all"
+            className="w-full py-3 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/20 transition-all flex items-center justify-center gap-2"
           >
+            <HomeIcon size={18} />
             Back to Home
           </button>
         </div>

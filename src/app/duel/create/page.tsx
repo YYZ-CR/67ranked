@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DURATION_6_7S, DURATION_20S, DURATION_67_REPS, MIN_CUSTOM_DURATION, MAX_CUSTOM_DURATION, is67RepsMode } from '@/types/game';
+import { SwordsIcon, FlameIcon, TimerIcon, TargetIcon, HomeIcon } from '@/components/ui/Icons';
 
 export default function CreateDuelPage() {
   const router = useRouter();
@@ -75,13 +76,15 @@ export default function CreateDuelPage() {
       <div className="glass-panel p-6 rounded-2xl max-w-md w-full">
         <button
           onClick={() => router.push('/')}
-          className="text-white/50 hover:text-white mb-4 text-sm"
+          className="text-white/50 hover:text-white mb-4 text-sm flex items-center gap-1"
         >
-          ← Back to Home
+          <HomeIcon size={14} />
+          Back to Home
         </button>
 
-        <h1 className="text-2xl font-bold text-white mb-6 text-center">
-          ⚔️ Create a Duel
+        <h1 className="text-2xl font-bold text-white mb-6 text-center flex items-center justify-center gap-2">
+          <SwordsIcon size={24} />
+          Create a Duel
         </h1>
 
         {/* Username input */}
@@ -99,39 +102,42 @@ export default function CreateDuelPage() {
 
         {/* Duration Selection */}
         <div className="mb-6">
-          <label className="text-white/70 text-sm mb-2 block">Mode</label>
+          <label className="text-white/70 text-sm mb-2 block uppercase tracking-wider text-xs">Mode</label>
           <div className="grid grid-cols-2 gap-2 mb-2">
             <button
               onClick={() => handleDurationSelect(DURATION_6_7S)}
-              className={`py-3 rounded-xl font-semibold transition-all ${
+              className={`py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
                 duration === DURATION_6_7S && !showCustom
                   ? 'bg-accent-green text-black'
                   : 'bg-white/10 text-white hover:bg-white/20'
               }`}
             >
+              <FlameIcon size={16} />
               6.7s
             </button>
             <button
               onClick={() => handleDurationSelect(DURATION_20S)}
-              className={`py-3 rounded-xl font-semibold transition-all ${
+              className={`py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
                 duration === DURATION_20S && !showCustom
                   ? 'bg-accent-green text-black'
                   : 'bg-white/10 text-white hover:bg-white/20'
               }`}
             >
+              <TimerIcon size={16} />
               20s
             </button>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => handleDurationSelect(DURATION_67_REPS)}
-              className={`py-3 rounded-xl font-semibold transition-all ${
+              className={`py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
                 is67RepsMode(duration) && !showCustom
                   ? 'bg-accent-green text-black'
                   : 'bg-white/10 text-white hover:bg-white/20'
               }`}
             >
-              67 Reps ⚡
+              <TargetIcon size={16} />
+              67 Reps
             </button>
             <button
               onClick={handleCustomToggle}

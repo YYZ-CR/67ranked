@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { GamePanel } from '@/components/game';
 import { LeaderboardPanel } from '@/components/leaderboard';
+import { UsersIcon, GamepadIcon } from '@/components/ui/Icons';
 
 interface Stats {
   totalGames: number;
@@ -40,11 +41,15 @@ export default function Home() {
       {/* Stats banner */}
       {stats && stats.totalGames > 0 && (
         <div className="absolute top-0 left-0 right-0 z-10 flex justify-center py-2 pointer-events-none">
-          <div className="bg-black/40 backdrop-blur-sm px-4 py-1.5 rounded-full border border-white/10">
-            <span className="text-white/60 text-sm">
-              🎮 <span className="text-accent-green font-semibold">{stats.totalPlayers.toLocaleString()}</span> players
-              {' • '}
-              <span className="text-accent-green font-semibold">{stats.totalGames.toLocaleString()}</span> games played
+          <div className="bg-black/40 backdrop-blur-sm px-4 py-1.5 rounded-full border border-white/10 flex items-center gap-4">
+            <span className="text-white/60 text-sm flex items-center gap-1.5">
+              <UsersIcon size={16} className="text-accent-green" />
+              <span className="text-accent-green font-semibold">{stats.totalPlayers.toLocaleString()}</span> players
+            </span>
+            <span className="text-white/20">•</span>
+            <span className="text-white/60 text-sm flex items-center gap-1.5">
+              <GamepadIcon size={16} className="text-accent-green" />
+              <span className="text-accent-green font-semibold">{stats.totalGames.toLocaleString()}</span> games
             </span>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { GameResult, DURATION_6_7S, DURATION_20S, DURATION_67_REPS, is67RepsMode } from '@/types/game';
+import { CrownIcon, EqualsIcon, RefreshIcon, ShareIcon, CheckCircleIcon } from '@/components/ui/Icons';
 
 interface EndScreenProps {
   result: GameResult;
@@ -142,21 +143,23 @@ export function EndScreen({
         {(mode === 'duel' || mode === 'challenge') && result.opponentScore !== undefined && (
           <div className="mb-6 py-4 border-t border-b border-white/10">
             <div className={`
-              text-3xl font-black mb-3
+              text-3xl font-black mb-3 flex items-center justify-center gap-2
               ${result.outcome === 'win' ? 'text-accent-green' : 
                 result.outcome === 'lose' ? 'text-red-400' : 'text-yellow-400'}
             `}>
-              {result.outcome === 'win' ? '🎉 YOU WIN!' : 
-               result.outcome === 'lose' ? '😔 YOU LOSE' : '🤝 TIE!'}
+              {result.outcome === 'win' && <CrownIcon size={32} />}
+              {result.outcome === 'tie' && <EqualsIcon size={28} />}
+              {result.outcome === 'win' ? 'VICTORY' : 
+               result.outcome === 'lose' ? 'DEFEAT' : 'TIE'}
             </div>
             <div className="flex justify-center items-center gap-4">
               <div className="text-center">
-                <p className="text-white/60 text-xs">You</p>
+                <p className="text-white/60 text-xs uppercase tracking-wider">You</p>
                 <p className="text-2xl font-bold text-white">{result.myScore}</p>
               </div>
               <span className="text-white/40 text-xl">vs</span>
               <div className="text-center">
-                <p className="text-white/60 text-xs">{result.opponentUsername}</p>
+                <p className="text-white/60 text-xs uppercase tracking-wider">{result.opponentUsername}</p>
                 <p className="text-2xl font-bold text-white">{result.opponentScore}</p>
               </div>
             </div>
@@ -187,9 +190,10 @@ export function EndScreen({
 
         {/* Submitted confirmation */}
         {isSubmitted && (
-          <div className="mb-4 py-3 bg-accent-green/20 rounded-xl">
+          <div className="mb-4 py-3 bg-accent-green/20 rounded-xl flex items-center justify-center gap-2">
+            <CheckCircleIcon size={20} className="text-accent-green" />
             <p className="text-accent-green font-semibold">
-              ✓ Score submitted to leaderboard!
+              Score submitted to leaderboard!
             </p>
           </div>
         )}
@@ -217,18 +221,17 @@ export function EndScreen({
             onClick={handleShare}
             className="w-full py-3 rounded-xl bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-all flex items-center justify-center gap-2"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-            </svg>
+            <ShareIcon size={20} />
             Share
           </button>
           
           {onRematch && (
             <button
               onClick={onRematch}
-              className="w-full py-3 rounded-xl bg-purple-500 text-white font-semibold hover:bg-purple-600 transition-all"
+              className="w-full py-3 rounded-xl bg-purple-500 text-white font-semibold hover:bg-purple-600 transition-all flex items-center justify-center gap-2"
             >
-              🔄 Rematch
+              <RefreshIcon size={20} />
+              Rematch
             </button>
           )}
           

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { GameMode, DURATION_6_7S, DURATION_20S, DURATION_67_REPS, MIN_CUSTOM_DURATION, MAX_CUSTOM_DURATION } from '@/types/game';
+import { PlayIcon, SwordsIcon, TimerIcon, FlameIcon, TargetIcon } from '@/components/ui/Icons';
 
 interface ModeSelectorProps {
   onSelect: (mode: GameMode, duration: number) => void;
@@ -67,23 +68,34 @@ export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
 
         {/* Mode Selection */}
         <div className="mb-6">
-          <label className="text-white/70 text-sm mb-2 block">Mode</label>
+          <label className="text-white/70 text-sm mb-2 block uppercase tracking-wider text-xs">Mode</label>
           <div className="grid grid-cols-2 gap-2">
-            {(['normal', 'duel'] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => setMode(m)}
-                className={`
-                  py-3 px-2 rounded-xl text-sm font-semibold transition-all
-                  ${mode === m 
-                    ? 'bg-accent-green text-black' 
-                    : 'bg-white/10 text-white hover:bg-white/20'
-                  }
-                `}
-              >
-                {m === 'normal' ? '🎮 Solo' : '⚔️ Duel'}
-              </button>
-            ))}
+            <button
+              onClick={() => setMode('normal')}
+              className={`
+                py-3 px-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2
+                ${mode === 'normal' 
+                  ? 'bg-accent-green text-black' 
+                  : 'bg-white/10 text-white hover:bg-white/20'
+                }
+              `}
+            >
+              <PlayIcon size={18} />
+              Solo
+            </button>
+            <button
+              onClick={() => setMode('duel')}
+              className={`
+                py-3 px-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2
+                ${mode === 'duel' 
+                  ? 'bg-accent-green text-black' 
+                  : 'bg-white/10 text-white hover:bg-white/20'
+                }
+              `}
+            >
+              <SwordsIcon size={18} />
+              Duel
+            </button>
           </div>
           
           {/* Mode description */}
@@ -95,44 +107,47 @@ export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
 
         {/* Duration Selection */}
         <div className="mb-6">
-          <label className="text-white/70 text-sm mb-2 block">Game Type</label>
+          <label className="text-white/70 text-sm mb-2 block uppercase tracking-wider text-xs">Game Type</label>
           <div className="grid grid-cols-3 gap-2 mb-2">
             <button
               onClick={() => handleDurationSelect(DURATION_6_7S)}
               className={`
-                py-3 rounded-xl font-semibold transition-all text-sm
+                py-3 rounded-xl font-semibold transition-all text-sm flex flex-col items-center gap-1
                 ${duration === DURATION_6_7S && !showCustom
                   ? 'bg-accent-green text-black' 
                   : 'bg-white/10 text-white hover:bg-white/20'
                 }
               `}
             >
+              <FlameIcon size={18} />
               <div>6.7s</div>
               <div className="text-xs opacity-70">Sprint</div>
             </button>
             <button
               onClick={() => handleDurationSelect(DURATION_20S)}
               className={`
-                py-3 rounded-xl font-semibold transition-all text-sm
+                py-3 rounded-xl font-semibold transition-all text-sm flex flex-col items-center gap-1
                 ${duration === DURATION_20S && !showCustom
                   ? 'bg-accent-green text-black' 
                   : 'bg-white/10 text-white hover:bg-white/20'
                 }
               `}
             >
+              <TimerIcon size={18} />
               <div>20s</div>
               <div className="text-xs opacity-70">Endurance</div>
             </button>
             <button
               onClick={() => handleDurationSelect(DURATION_67_REPS)}
               className={`
-                py-3 rounded-xl font-semibold transition-all text-sm
+                py-3 rounded-xl font-semibold transition-all text-sm flex flex-col items-center gap-1
                 ${duration === DURATION_67_REPS
                   ? 'bg-accent-green text-black' 
                   : 'bg-white/10 text-white hover:bg-white/20'
                 }
               `}
             >
+              <TargetIcon size={18} />
               <div>67 Reps</div>
               <div className="text-xs opacity-70">Speedrun</div>
             </button>
@@ -177,8 +192,11 @@ export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
           
           {/* Leaderboard eligibility note */}
           {mode === 'normal' && showCustom && (
-            <p className="text-yellow-400/70 text-xs mt-2">
-              ⚠️ Custom durations don&apos;t qualify for the leaderboard
+            <p className="text-yellow-400/70 text-xs mt-2 flex items-center gap-1">
+              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2L1 21h22L12 2zm0 3.99L19.53 19H4.47L12 5.99zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/>
+              </svg>
+              Custom durations don&apos;t qualify for the leaderboard
             </p>
           )}
         </div>
