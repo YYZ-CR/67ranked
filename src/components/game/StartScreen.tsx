@@ -60,7 +60,8 @@ export function StartScreen({ onStart, error, onRetry }: StartScreenProps) {
             transition-all duration-200
             shadow-lg shadow-accent-green/30
             animate-pulse-glow
-            flex items-center justify-center gap-3
+            inline-flex items-center justify-center gap-3
+            mx-auto
           "
         >
           <PlayIcon size={24} />
