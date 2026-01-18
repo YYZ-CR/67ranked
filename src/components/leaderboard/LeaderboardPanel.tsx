@@ -100,11 +100,37 @@ export function LeaderboardPanel({ refreshTrigger }: LeaderboardPanelProps) {
         )}
       </div>
 
-      {/* Footer */}
-      <div className="flex-shrink-0 p-3 border-t border-white/10 text-center">
+      {/* Footer with refresh button */}
+      <div className="flex-shrink-0 p-3 border-t border-white/10 flex items-center justify-between">
         <p className="text-white/30 text-xs">
-          Top 100 • Refreshes every 60s
+          Top 100 • Auto-refresh 60s
         </p>
+        <button
+          onClick={refresh}
+          disabled={isLoading}
+          className={`
+            flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all
+            ${isLoading 
+              ? 'bg-white/5 text-white/30 cursor-not-allowed' 
+              : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+            }
+          `}
+        >
+          <svg 
+            className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} 
+            fill="none" 
+            viewBox="0 0 24 24" 
+            stroke="currentColor"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+            />
+          </svg>
+          Refresh
+        </button>
       </div>
     </div>
   );
