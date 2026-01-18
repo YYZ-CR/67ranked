@@ -107,7 +107,7 @@ export default function DuelResultsPage() {
       if (player1.score! > player2.score!) {
         winner = player1.username;
         outcome = 'player1';
-      } else if (player2.score! < player1.score!) {
+      } else if (player2.score! > player1.score!) {
         winner = player2.username;
         outcome = 'player2';
       } else {
@@ -222,7 +222,7 @@ export default function DuelResultsPage() {
 
         {/* Footer */}
         <div className="mt-6 text-center">
-          <p className="text-white/30 text-xs">67ranked.vercel.app</p>
+          <p className="text-white/30 text-xs">67ranked.com</p>
         </div>
       </div>
     </main>
