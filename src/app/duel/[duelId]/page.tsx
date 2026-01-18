@@ -94,6 +94,10 @@ export default function DuelPage() {
   const [displayRepCount, setDisplayRepCount] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
   const gameEndedRef = useRef(false);
+  
+  // Container size for responsive canvas (same as normal mode)
+  const [containerSize, setContainerSize] = useState(400);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Keep duel ref in sync
   useEffect(() => {
@@ -454,6 +458,34 @@ export default function DuelPage() {
     }
   }, [pageState, trackingState, startCountdown]);
 
+  // Update container size on resize - same logic as normal mode
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        const parent = containerRef.current.parentElement;
+        if (parent) {
+          const width = parent.clientWidth - 8; // minimal padding
+          const height = parent.clientHeight - 8;
+          // Use the smaller dimension to keep square
+          // Max 400px on mobile (<640px), 550px on larger screens
+          const isMobile = window.innerWidth < 640;
+          const maxSize = isMobile ? 400 : 550;
+          const size = Math.min(width, height, maxSize);
+          setContainerSize(Math.max(size, 240)); // minimum 240px
+        }
+      }
+    };
+    
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    // Small delay to ensure parent is sized
+    const timeout = setTimeout(updateSize, 100);
+    return () => {
+      window.removeEventListener('resize', updateSize);
+      clearTimeout(timeout);
+    };
+  }, []);
+
   // Cleanup
   useEffect(() => {
     return () => {
@@ -643,13 +675,12 @@ export default function DuelPage() {
   }
 
   // Game states (calibrating, countdown, playing, results)
-  const containerSize = 400;
-  
   return (
     <main className="min-h-screen bg-bg-primary bg-grid-pattern bg-gradient-radial">
       <Header showNav={false} />
       <div className="min-h-screen flex items-center justify-center p-4 pt-16">
         <div 
+          ref={containerRef}
           className="relative rounded-xl overflow-hidden bg-gray-900 ring-2 ring-accent-green/30 shadow-[0_0_30px_rgba(74,222,128,0.15)]"
           style={{ width: containerSize, height: containerSize }}
         >
