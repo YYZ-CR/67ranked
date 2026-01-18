@@ -215,13 +215,23 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
     gameEndedRef.current = false;
     finishTimeRef.current = 0;
     
-    // Use the ref value (set immediately when user selected) to avoid state timing issues
-    const actualDuration = selectedDurationRef.current;
+    // Use ref value, but fall back to state if ref wasn't set (defensive)
+    // Also verify the ref was actually updated (not still the initial value when 67 reps is selected)
+    let actualDuration = selectedDurationRef.current;
+    
+    // If state says 67 reps but ref doesn't match, trust the state
+    if (is67RepsMode(duration) && !is67RepsMode(actualDuration)) {
+      actualDuration = duration;
+      selectedDurationRef.current = duration; // Fix the ref
+    }
+    
     const is67Reps = is67RepsMode(actualDuration);
     const gameDuration = is67Reps ? 0 : actualDuration;
     
     // Store in ref to avoid stale closure issues
     gameModeRef.current = { is67Reps, duration: actualDuration };
+    
+    console.log('[67ranked] Starting game:', { actualDuration, is67Reps, gameDuration });
     
     setTimeRemaining(gameDuration);
     setElapsedTime(0);
