@@ -117,17 +117,46 @@ export default function DuelPage() {
           setPageState('calibrating');
         }
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'duel_players', filter: `duel_id=eq.${duelId}` }, () => {
-        fetch(`/api/duel/${duelId}`)
-          .then(res => res.json())
-          .then(data => setPlayers(data.players));
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'duel_players', filter: `duel_id=eq.${duelId}` }, async () => {
+        // Fetch updated players
+        const res = await fetch(`/api/duel/${duelId}`);
+        const data = await res.json();
+        setPlayers(data.players);
+        
+        // If we're in results and waiting for opponent, check if they've submitted
+        if (pageState === 'results' && !result?.opponentScore) {
+          const myPlayer = data.players.find((p: DuelPlayer) => p.player_key === myPlayerKey);
+          const opponent = data.players.find((p: DuelPlayer) => p.player_key !== myPlayerKey);
+          
+          if (myPlayer?.score !== null && opponent?.score !== null) {
+            // Both have submitted - calculate result
+            const is67Reps = duel && is67RepsMode(duel.duration_ms);
+            let outcome: 'win' | 'lose' | 'tie' = 'tie';
+            
+            if (is67Reps) {
+              // Lower time wins
+              if (myPlayer.score < opponent.score) outcome = 'win';
+              else if (myPlayer.score > opponent.score) outcome = 'lose';
+            } else {
+              // Higher reps wins
+              if (myPlayer.score > opponent.score) outcome = 'win';
+              else if (myPlayer.score < opponent.score) outcome = 'lose';
+            }
+            
+            setResult({
+              myScore: myPlayer.score,
+              opponentScore: opponent.score,
+              outcome
+            });
+          }
+        }
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [duelId, pageState]);
+  }, [duelId, pageState, myPlayerKey, result, duel]);
 
   // Join duel
   const handleJoin = async () => {
