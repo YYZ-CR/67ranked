@@ -276,13 +276,16 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
   const endGame = (finalElapsedMs?: number) => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
     }
     
     if (is67RepsMode(duration)) {
       // 67 reps mode: score is the elapsed time in ms
-      const elapsed = finalElapsedMs || (performance.now() - gameStartTimeRef.current);
-      setFinalScore(Math.round(elapsed));
-      setElapsedTime(elapsed);
+      // Use the captured finish time, not current time
+      const elapsed = finalElapsedMs ?? finishTimeRef.current ?? (performance.now() - gameStartTimeRef.current);
+      const roundedElapsed = Math.round(elapsed);
+      setFinalScore(roundedElapsed);
+      setElapsedTime(roundedElapsed); // Use rounded value for consistency
     } else {
       // Timed mode: score is the rep count
       const score = trackerRef.current?.getRepCount() || 0;
@@ -453,7 +456,7 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
               myUsername: ''
             }}
             duration={duration}
-            elapsedTime={is67RepsMode(duration) ? finalScore : undefined}
+            elapsedTime={is67RepsMode(duration) ? elapsedTime : undefined}
             mode={gameMode}
             onSubmit={handleSubmit}
             onPlayAgain={handlePlayAgain}

@@ -200,6 +200,7 @@ export default function DuelPage() {
   const endGame = useCallback(async (finalElapsedMs?: number) => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
     }
 
     const currentDuel = duelDataRef.current;
@@ -209,8 +210,10 @@ export default function DuelPage() {
     // For timed modes, score is the rep count
     let score: number;
     if (is67Reps) {
-      score = finalElapsedMs || elapsedTime;
+      // Use the exact captured time, rounded for consistency
+      score = Math.round(finalElapsedMs ?? elapsedTime);
       setDisplayRepCount(67);
+      setElapsedTime(score); // Update for consistent display
     } else {
       score = trackerRef.current?.getRepCount() || repCountRef.current || 0;
     }

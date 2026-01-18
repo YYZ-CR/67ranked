@@ -12,6 +12,12 @@ interface GameOverlayProps {
   warningMessage?: string;
 }
 
+// Format time with 2 decimal places for speedrun precision
+function formatSpeedrunTime(ms: number): string {
+  const seconds = Math.max(0, ms / 1000);
+  return seconds.toFixed(2);
+}
+
 export function GameOverlay({
   repCount,
   timeRemaining,
@@ -66,7 +72,7 @@ export function GameOverlay({
       <div className="flex justify-center pb-4">
         <div className="glass-panel px-8 py-3 rounded-full">
           <span className="text-3xl font-mono font-bold text-white tabular-nums">
-            {formatTime(displayTime)}
+            {is67RepsMode ? formatSpeedrunTime(displayTime) : formatTime(displayTime)}
           </span>
           <span className="text-lg text-white/70 ml-1">s</span>
         </div>
