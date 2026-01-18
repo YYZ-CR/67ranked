@@ -726,15 +726,19 @@ export default function DuelPage() {
               }
             };
             
+            const waitingForOpponent = result?.opponentScore == null;
+            
             return (
               <div className="absolute inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm p-3">
                 <div className="glass-panel p-5 rounded-xl text-center w-full max-w-xs">
                   {/* Result header */}
                   <div className={`text-2xl font-bold mb-4 ${
+                    waitingForOpponent ? 'text-white/50' :
                     result?.outcome === 'win' ? 'text-accent-green' :
                     result?.outcome === 'lose' ? 'text-red-400' : 'text-yellow-400'
                   }`}>
-                    {result?.outcome === 'win' ? 'YOU WIN' :
+                    {waitingForOpponent ? 'WAITING...' :
+                     result?.outcome === 'win' ? 'YOU WIN' :
                      result?.outcome === 'lose' ? 'YOU LOSE' : 'TIE'}
                   </div>
 

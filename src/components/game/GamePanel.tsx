@@ -58,8 +58,8 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
         if (parent) {
           const width = parent.clientWidth - 8; // minimal padding
           const height = parent.clientHeight - 8;
-          // Use the smaller dimension to keep square, max 800px
-          const size = Math.min(width, height, 800);
+          // Use the smaller dimension to keep square, max 550px
+          const size = Math.min(width, height, 550);
           setContainerSize(Math.max(size, 260)); // minimum 260px
         }
       }
