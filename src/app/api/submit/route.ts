@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate rank and percentile
-    const is67Reps = is67RepsMode(payload.duration_ms);
+    // Reuse is67Reps from earlier in the function (line 44)
     const orderDirection = is67Reps ? 'asc' : 'desc'; // Lower time is better for 67 reps
     
     // Get total count for this duration
