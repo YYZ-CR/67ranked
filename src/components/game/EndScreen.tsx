@@ -15,6 +15,8 @@ interface EndScreenProps {
   submitError?: string | null;
   isSubmitted?: boolean;
   scoreId?: string;
+  rank?: number;
+  percentile?: number;
 }
 
 // Icons
@@ -48,7 +50,9 @@ export function EndScreen({
   isSubmitting = false,
   submitError = null,
   isSubmitted = false,
-  scoreId
+  scoreId,
+  rank,
+  percentile
 }: EndScreenProps) {
   const [username, setUsername] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -101,6 +105,12 @@ export function EndScreen({
   const formatElapsedTime = (ms: number) => (ms / 1000).toFixed(2);
 
   const handleShare = async () => {
+    // Check if score needs to be saved first
+    if (canSubmitToLeaderboard && !isSubmitted) {
+      alert('Please save your score first');
+      return;
+    }
+
     const shareText = is67Reps
       ? `${username || 'I'} got 67 reps in ${formatElapsedTime(elapsedTime || 0)}s on 67ranked.com`
       : `${username || 'I'} scored ${result.myScore} reps on 67ranked.com`;
@@ -174,9 +184,26 @@ export function EndScreen({
 
           {/* Submitted badge */}
           {isSubmitted && (
-            <div className="mb-2.5 sm:mb-3 flex items-center justify-center gap-1.5 py-1.5 sm:py-2 px-2 sm:px-3 bg-accent-green/10 rounded-md sm:rounded-lg">
-              <CheckIcon />
-              <span className="text-[10px] sm:text-xs text-accent-green font-medium">Saved</span>
+            <div className="mb-2.5 sm:mb-3 space-y-2">
+              <div className="flex items-center justify-center gap-1.5 py-1.5 sm:py-2 px-2 sm:px-3 bg-accent-green/10 rounded-md sm:rounded-lg">
+                <CheckIcon />
+                <span className="text-[10px] sm:text-xs text-accent-green font-medium">Saved</span>
+              </div>
+              {/* Rank and percentile */}
+              {mode === 'normal' && (rank !== undefined || percentile !== undefined) && (
+                <div className="flex items-center justify-center gap-3 text-xs sm:text-sm">
+                  {rank !== undefined && (
+                    <span className="text-white/60">
+                      Rank <span className="text-accent-green font-semibold">#{rank}</span>
+                    </span>
+                  )}
+                  {percentile !== undefined && (
+                    <span className="text-white/60">
+                      Top <span className="text-accent-green font-semibold">{percentile}%</span>
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
