@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect } from 'react';
 import { GamePanel } from '@/components/game';
 import { LeaderboardPanel } from '@/components/leaderboard';
 import { Header } from '@/components/ui/Header';
-import { Footer } from '@/components/ui/Footer';
 
 interface Stats {
   totalGames: number;
@@ -37,22 +36,10 @@ export default function Home() {
 
   return (
     <main className="min-h-screen w-full bg-bg-primary bg-grid-pattern bg-gradient-radial overflow-x-hidden">
-      <Header />
-      
-      {/* Stats pill */}
-      {stats && stats.totalGames > 0 && (
-        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
-          <div className="bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-accent-green/20 flex items-center gap-1.5">
-            <span className="status-dot"></span>
-            <span className="text-white/50 text-xs font-mono">
-              <span className="text-accent-green font-semibold">{stats.totalGames.toLocaleString()}</span> players
-            </span>
-          </div>
-        </div>
-      )}
+      <Header playerCount={stats?.totalGames} />
 
       {/* Main content */}
-      <div className="h-screen flex flex-col lg:flex-row pt-12 pb-12 overflow-hidden">
+      <div className="h-screen flex flex-col lg:flex-row pt-12 pb-2 overflow-hidden">
         {/* Game Panel - Main focus, takes most space */}
         <div className="flex-1 p-2 sm:p-4 flex items-center justify-center min-h-0">
           <GamePanel onScoreSubmitted={handleScoreSubmitted} />
@@ -63,8 +50,6 @@ export default function Home() {
           <LeaderboardPanel refreshTrigger={refreshTrigger} />
         </div>
       </div>
-
-      <Footer />
     </main>
   );
 }

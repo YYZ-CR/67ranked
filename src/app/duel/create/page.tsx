@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { DURATION_6_7S, DURATION_20S, DURATION_67_REPS, MIN_CUSTOM_DURATION, MAX_CUSTOM_DURATION, is67RepsMode } from '@/types/game';
+import { DURATION_6_7S, DURATION_20S, DURATION_67_REPS, MIN_CUSTOM_DURATION, MAX_CUSTOM_DURATION } from '@/types/game';
 import { Header } from '@/components/ui/Header';
 
 // Icons
@@ -102,7 +102,7 @@ export default function CreateDuelPage() {
     }
   };
 
-  const protocols = [
+  const modes = [
     { id: DURATION_6_7S, title: '6.7s', subtitle: 'Sprint', icon: BoltIcon },
     { id: DURATION_20S, title: '20s', subtitle: 'Endurance', icon: TimerIcon },
     { id: DURATION_67_REPS, title: '67', subtitle: 'Reps', icon: TargetIcon },
@@ -112,10 +112,10 @@ export default function CreateDuelPage() {
     <main className="min-h-screen bg-bg-primary bg-grid-pattern bg-gradient-radial">
       <Header />
       
-      <div className="min-h-screen flex items-center justify-center p-4 pt-20">
-        <div className="glass-panel rounded-2xl w-full max-w-lg animate-fade-in">
+      <div className="min-h-screen flex items-center justify-center p-4 pt-16">
+        <div className="glass-panel rounded-2xl w-full max-w-md animate-fade-in">
           {/* Header */}
-          <div className="p-6 border-b border-white/5 flex items-center justify-between">
+          <div className="p-4 border-b border-white/5">
             <button
               onClick={() => router.push('/')}
               className="text-white/40 hover:text-white transition-colors flex items-center gap-1.5 text-sm"
@@ -123,81 +123,66 @@ export default function CreateDuelPage() {
               <ArrowLeftIcon />
               <span>Back</span>
             </button>
-            <div className="flex items-center gap-1.5">
-              <span className="status-dot"></span>
-              <span className="text-xs font-mono text-accent-green uppercase tracking-wider">System Online</span>
-            </div>
           </div>
 
           {/* Content */}
-          <div className="p-6 lg:p-8">
+          <div className="p-5">
             {/* Title */}
-            <div className="text-center mb-8">
-              <h1 className="text-3xl lg:text-4xl font-black text-white tracking-tight mb-2" style={{ fontStyle: 'italic' }}>
-                CREATE A DUEL
-              </h1>
-              <p className="text-white/30 text-xs font-mono uppercase tracking-wider">
-                Initialization Protocol 67.4
-              </p>
-            </div>
+            <h1 className="text-2xl font-bold text-white mb-6">
+              Create a Duel
+            </h1>
 
             {/* Username */}
-            <div className="mb-8">
-              <label className="text-label block mb-2">
-                <span className="status-dot inline-block mr-1.5"></span>
-                Operator Identification
-              </label>
+            <div className="mb-5">
+              <label className="text-xs text-white/50 block mb-1.5">Your name</label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your codename (e.g. NEO_67)"
+                placeholder="Enter your name"
                 maxLength={20}
-                className="w-full rounded-lg px-4 py-4 text-white placeholder:text-white/20 font-mono uppercase tracking-wider"
+                className="w-full rounded-lg px-4 py-3 text-white placeholder:text-white/30"
               />
             </div>
 
-            {/* Protocol Selection */}
-            <div className="mb-8">
-              <label className="text-label block mb-3">
-                <span className="status-dot inline-block mr-1.5"></span>
-                Select Duel Protocol
-              </label>
+            {/* Mode Selection */}
+            <div className="mb-5">
+              <label className="text-xs text-white/50 block mb-2">Mode</label>
               <div className="grid grid-cols-4 gap-2">
-                {protocols.map(({ id, title, subtitle, icon: Icon }) => {
+                {modes.map(({ id, title, subtitle, icon: Icon }) => {
                   const isSelected = duration === id && !showCustom;
                   return (
                     <button
                       key={id}
                       onClick={() => handleDurationSelect(id)}
-                      className={`p-4 rounded-xl text-center transition-all ${
+                      className={`p-3 rounded-xl text-center transition-all ${
                         isSelected ? 'card-selected' : 'card'
                       }`}
                     >
-                      <div className={`w-full flex justify-center mb-2 ${isSelected ? 'text-accent-green' : 'text-white/40'}`}>
+                      <div className={`w-full flex justify-center mb-1.5 ${isSelected ? 'text-accent-green' : 'text-white/40'}`}>
                         <Icon />
                       </div>
-                      <p className={`text-xl font-bold ${isSelected ? 'text-white' : 'text-white/70'}`}>{title}</p>
-                      <p className="text-xs text-white/30 uppercase tracking-wider">{subtitle}</p>
+                      <p className={`text-lg font-bold ${isSelected ? 'text-white' : 'text-white/70'}`}>{title}</p>
+                      <p className="text-[10px] text-white/40">{subtitle}</p>
                     </button>
                   );
                 })}
                 <button
                   onClick={handleCustomToggle}
-                  className={`p-4 rounded-xl text-center transition-all ${
+                  className={`p-3 rounded-xl text-center transition-all ${
                     showCustom ? 'card-selected' : 'card'
                   }`}
                 >
-                  <div className={`w-full flex justify-center mb-2 ${showCustom ? 'text-accent-green' : 'text-white/40'}`}>
+                  <div className={`w-full flex justify-center mb-1.5 ${showCustom ? 'text-accent-green' : 'text-white/40'}`}>
                     <CustomIcon />
                   </div>
-                  <p className={`text-lg font-bold ${showCustom ? 'text-white' : 'text-white/70'}`}>Custom</p>
-                  <p className="text-xs text-white/30 uppercase tracking-wider">5-120s</p>
+                  <p className={`text-base font-bold ${showCustom ? 'text-white' : 'text-white/70'}`}>Custom</p>
+                  <p className="text-[10px] text-white/40">5-120s</p>
                 </button>
               </div>
 
               {showCustom && (
-                <div className="mt-4 flex items-center gap-3">
+                <div className="mt-3 flex items-center gap-2">
                   <input
                     type="number"
                     value={customSeconds}
@@ -205,7 +190,7 @@ export default function CreateDuelPage() {
                     min={5}
                     max={120}
                     step="0.1"
-                    className="flex-1 rounded-lg px-4 py-3 text-white text-center font-mono"
+                    className="flex-1 rounded-lg px-4 py-2.5 text-white text-center font-mono"
                   />
                   <span className="text-white/40 text-sm">seconds</span>
                 </div>
@@ -220,35 +205,15 @@ export default function CreateDuelPage() {
             <button
               onClick={handleCreate}
               disabled={isCreating || !username.trim()}
-              className={`btn-primary w-full text-lg py-5 ${(isCreating || !username.trim()) ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`btn-primary w-full py-3.5 ${(isCreating || !username.trim()) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {isCreating ? 'Initializing...' : 'Create Duel Protocol'}
-              {!isCreating && (
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z" />
-                </svg>
-              )}
+              {isCreating ? 'Creating...' : 'Create Duel'}
             </button>
 
             {/* Info */}
-            <div className="mt-6 p-4 rounded-lg bg-white/[0.02] border border-white/5">
-              <p className="text-white/30 text-xs flex items-start gap-2">
-                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 16v-4M12 8h.01" strokeLinecap="round" />
-                </svg>
-                <span>
-                  Upon initialization, a high-security access link will be generated. 
-                  Dispatch this link to your opponent to begin the synchronization.
-                </span>
-              </p>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="px-6 py-4 border-t border-white/5 flex items-center justify-between">
-            <span className="text-xs text-white/20 font-mono uppercase tracking-wider">Status: Awaiting Operator Input</span>
-            <span className="text-xs text-white/20 font-mono">v1.0.67-beta</span>
+            <p className="text-white/30 text-xs text-center mt-4">
+              You&apos;ll get a link to share with your opponent
+            </p>
           </div>
         </div>
       </div>

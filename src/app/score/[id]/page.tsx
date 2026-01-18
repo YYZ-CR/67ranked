@@ -135,8 +135,8 @@ export default function ScorePage() {
     return (
       <main className="min-h-screen bg-bg-primary bg-grid-pattern bg-gradient-radial flex items-center justify-center">
         <div className="flex items-center gap-2 text-white/40">
-          <div className="w-5 h-5 border-2 border-white/20 border-t-accent-green rounded-full animate-spin" />
-          <span className="font-mono text-sm uppercase tracking-wider">Loading...</span>
+          <div className="w-4 h-4 border-2 border-white/20 border-t-accent-green rounded-full animate-spin" />
+          <span className="text-sm">Loading...</span>
         </div>
       </main>
     );
@@ -183,15 +183,15 @@ export default function ScorePage() {
         <div className="w-full max-w-lg animate-fade-in">
           {/* Score Card */}
           <div className="glass-panel rounded-2xl overflow-hidden">
-            {/* Header bar */}
-            <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {getModeIcon()}
-                <span className="text-xs font-mono text-accent-green uppercase tracking-wider">
+                <span className="text-xs text-accent-green font-medium">
                   {formatDuration(scoreData.duration_ms)}
                 </span>
               </div>
-              <span className="text-xs font-mono text-white/30 uppercase tracking-wider">
+              <span className="text-xs text-white/30">
                 {new Date(scoreData.created_at).toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
@@ -261,8 +261,8 @@ export default function ScorePage() {
           </div>
 
           {/* Footer */}
-          <div className="text-center mt-6">
-            <p className="text-white/20 text-xs font-mono uppercase tracking-wider">67ranked.com</p>
+          <div className="text-center mt-4">
+            <p className="text-white/20 text-xs">67ranked.com</p>
           </div>
         </div>
       </div>

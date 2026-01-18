@@ -81,8 +81,8 @@ export default function DuelResultsPage() {
     return (
       <main className="min-h-screen bg-bg-primary bg-grid-pattern bg-gradient-radial flex items-center justify-center">
         <div className="flex items-center gap-2 text-white/40">
-          <div className="w-5 h-5 border-2 border-white/20 border-t-accent-green rounded-full animate-spin" />
-          <span className="font-mono text-sm uppercase tracking-wider">Loading...</span>
+          <div className="w-4 h-4 border-2 border-white/20 border-t-accent-green rounded-full animate-spin" />
+          <span className="text-sm">Loading...</span>
         </div>
       </main>
     );
@@ -141,24 +141,10 @@ export default function DuelResultsPage() {
       
       <div className="min-h-screen flex items-center justify-center p-4 pt-20">
         <div className="glass-panel rounded-2xl w-full max-w-xl animate-fade-in">
-          {/* Header bar */}
-          <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
-            <span className="text-xs font-mono text-white/30 uppercase tracking-wider">
-              {formatDuration(duel.duration_ms)} Duel
-            </span>
-            <div className="flex items-center gap-1.5">
-              <span className={`status-dot ${bothSubmitted ? '' : 'animate-pulse'}`}></span>
-              <span className="text-xs font-mono text-accent-green uppercase tracking-wider">
-                {bothSubmitted ? 'Complete' : 'In Progress'}
-              </span>
-            </div>
-          </div>
-
-          {/* Title */}
-          <div className="p-6 lg:p-8 text-center border-b border-white/5">
-            <h1 className="text-2xl lg:text-3xl font-black text-white tracking-tight">
-              DUEL RESULTS
-            </h1>
+          {/* Header */}
+          <div className="p-5 border-b border-white/5">
+            <h1 className="text-xl font-bold text-white">Duel Results</h1>
+            <p className="text-xs text-white/40 mt-1">{formatDuration(duel.duration_ms)} mode</p>
           </div>
 
           {/* Scores */}
@@ -251,8 +237,8 @@ export default function DuelResultsPage() {
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-white/5 text-center">
-            <p className="text-white/20 text-xs font-mono uppercase tracking-wider">67ranked.com</p>
+          <div className="px-5 py-3 border-t border-white/5 text-center">
+            <p className="text-white/20 text-xs">67ranked.com</p>
           </div>
         </div>
       </div>
