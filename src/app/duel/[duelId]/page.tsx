@@ -667,20 +667,21 @@ export default function DuelPage() {
               : result?.outcome === 'lose' ? 'lost to' 
               : 'tied with';
             
-            const shareText = `⚔️ 67Ranked Duel!\n${myName} ${outcomeText} ${oppName}\n${myScoreText} vs ${oppScoreText}\n\nChallenge your friends at 67ranked.vercel.app`;
+            const duelUrl = `${window.location.origin}/duel/${duelId}/results`;
+            const shareText = `⚔️ 67Ranked Duel!\n${myName} ${outcomeText} ${oppName}\n${myScoreText} vs ${oppScoreText}`;
             
             if (navigator.share) {
               try {
                 await navigator.share({
                   title: '67Ranked Duel Result',
                   text: shareText,
-                  url: 'https://67ranked.vercel.app'
+                  url: duelUrl
                 });
               } catch {
                 // User cancelled
               }
             } else {
-              await navigator.clipboard.writeText(shareText);
+              await navigator.clipboard.writeText(`${shareText}\n\n${duelUrl}`);
               alert('Result copied to clipboard!');
             }
           };
