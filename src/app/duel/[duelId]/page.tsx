@@ -7,7 +7,42 @@ import { HandTracker, RepCounter, CalibrationTracker } from '@/lib/hand-tracking
 import { CalibrationOverlay } from '@/components/game/CalibrationOverlay';
 import { CountdownOverlay } from '@/components/game/CountdownOverlay';
 import { GameOverlay } from '@/components/game/GameOverlay';
+import { Header } from '@/components/ui/Header';
 import { is67RepsMode } from '@/types/game';
+
+// Icons
+const CopyIcon = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+    <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const ShareIcon = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const RefreshIcon = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M1 4v6h6M23 20v-6h-6" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const HomeIcon = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" strokeLinecap="round" strokeLinejoin="round" />
+    <polyline points="9,22 9,12 15,12 15,22" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
 interface DuelData {
   id: string;
@@ -235,14 +270,11 @@ export default function DuelPage() {
     const currentDuel = duelDataRef.current;
     const is67Reps = currentDuel && is67RepsMode(currentDuel.duration_ms);
 
-    // For 67 reps mode, score is the elapsed time in ms
-    // For timed modes, score is the rep count
     let score: number;
     if (is67Reps) {
-      // Use the exact captured time, rounded for consistency
       score = Math.round(finalElapsedMs ?? elapsedTime);
       setDisplayRepCount(67);
-      setElapsedTime(score); // Update for consistent display
+      setElapsedTime(score);
     } else {
       score = trackerRef.current?.getRepCount() || repCountRef.current || 0;
     }
@@ -282,7 +314,6 @@ export default function DuelPage() {
 
     const is67Reps = is67RepsMode(currentDuel.duration_ms);
 
-    // Reset using the tracker's internal rep counter
     trackerRef.current?.resetRepCounter();
     repCountRef.current = 0;
     setDisplayRepCount(0);
@@ -307,14 +338,12 @@ export default function DuelPage() {
         setTimeRemaining(remaining);
       }
 
-      // Use the tracker's built-in pose-based rep counting
       if (trackerRef.current && !gameEndedRef.current) {
         trackerRef.current.processGameplay(null, null);
         const currentReps = trackerRef.current.getRepCount();
         repCountRef.current = currentReps;
         setDisplayRepCount(currentReps);
 
-        // Check if 67 reps reached
         if (is67Reps && currentReps >= 67) {
           gameEndedRef.current = true;
           endGame(Math.round(elapsed));
@@ -323,10 +352,8 @@ export default function DuelPage() {
       }
 
       if (is67Reps) {
-        // 67 reps mode continues until 67 reps are hit
         animationFrameRef.current = requestAnimationFrame(gameLoop);
       } else {
-        // Timed modes end when time runs out
         const remaining = Math.max(0, durationMs - elapsed);
         if (remaining > 0) {
           animationFrameRef.current = requestAnimationFrame(gameLoop);
@@ -384,7 +411,7 @@ export default function DuelPage() {
   // Track state for calibration effect
   const [trackingState, setTrackingState] = useState<{ bothHandsDetected: boolean } | null>(null);
 
-  // Initialize camera - only sets up tracking, doesn't handle calibration
+  // Initialize camera
   const initializeCamera = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) return;
 
@@ -417,7 +444,7 @@ export default function DuelPage() {
     }
   }, [pageState, initializeCamera]);
 
-  // Handle calibration in a separate effect (like normal GamePanel does)
+  // Handle calibration in a separate effect
   useEffect(() => {
     if (pageState !== 'calibrating' || !calibrationTrackerRef.current || !trackingState) return;
 
@@ -446,28 +473,38 @@ export default function DuelPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const formatDuration = (ms: number) => {
+    if (is67RepsMode(ms)) return '67 Reps';
+    return `${(ms / 1000).toFixed(1)}s`;
+  };
+
   // Render based on state
   if (pageState === 'loading') {
     return (
-      <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center">
-        <div className="text-white/50">Loading...</div>
+      <main className="min-h-screen bg-bg-primary bg-grid-pattern bg-gradient-radial">
+        <Header showNav={false} />
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-white/50 text-sm">Loading...</div>
+        </div>
       </main>
     );
   }
 
   if (pageState === 'error') {
     return (
-      <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
-        <div className="glass-panel p-6 rounded-2xl max-w-md w-full text-center">
-          <div className="text-5xl mb-4">😔</div>
-          <h2 className="text-xl font-bold text-white mb-2">Error</h2>
-          <p className="text-white/70 mb-4">{error}</p>
-          <button
-            onClick={() => router.push('/')}
-            className="px-6 py-3 rounded-xl bg-accent-green text-black font-semibold"
-          >
-            Back to Home
-          </button>
+      <main className="min-h-screen bg-bg-primary bg-grid-pattern bg-gradient-radial">
+        <Header showNav={false} />
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="glass-panel p-6 rounded-xl max-w-sm w-full text-center">
+            <h2 className="text-lg font-bold text-white mb-2">Error</h2>
+            <p className="text-white/60 text-sm mb-4">{error}</p>
+            <button
+              onClick={() => router.push('/')}
+              className="btn-primary w-full"
+            >
+              Back to Home
+            </button>
+          </div>
         </div>
       </main>
     );
@@ -475,49 +512,46 @@ export default function DuelPage() {
 
   if (pageState === 'join') {
     return (
-      <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
-        <div className="glass-panel p-6 rounded-2xl max-w-md w-full">
-          <h1 className="text-2xl font-bold text-white mb-2 text-center">⚔️ Duel Challenge</h1>
-          <p className="text-white/60 text-center mb-6">
-            {players[0]?.username} is challenging you!
-          </p>
-
-          <div className="mb-4 p-4 bg-white/5 rounded-xl text-center">
-            <p className="text-white/50 text-sm">Mode</p>
-            <p className="text-2xl font-bold text-white">
-              {duel?.duration_ms 
-                ? is67RepsMode(duel.duration_ms) 
-                  ? '67 Reps ⚡' 
-                  : `${(duel.duration_ms / 1000).toFixed(1)}s`
-                : '...'}
+      <main className="min-h-screen bg-bg-primary bg-grid-pattern bg-gradient-radial">
+        <Header showNav={false} />
+        <div className="min-h-screen flex items-center justify-center p-4 pt-16">
+          <div className="glass-panel p-5 rounded-xl max-w-sm w-full">
+            <h1 className="text-xl font-bold text-white mb-1 text-center">Duel Challenge</h1>
+            <p className="text-white/50 text-sm text-center mb-5">
+              {players[0]?.username} challenged you
             </p>
+
+            <div className="mb-4 p-3 bg-white/5 rounded-lg text-center border border-white/10">
+              <p className="text-white/40 text-xs mb-1">Mode</p>
+              <p className="text-lg font-bold text-white">
+                {duel?.duration_ms ? formatDuration(duel.duration_ms) : '...'}
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <label className="text-white/50 text-xs mb-1.5 block">Your name</label>
+              <input
+                type="text"
+                value={joinUsername}
+                onChange={(e) => setJoinUsername(e.target.value)}
+                placeholder="Enter your name"
+                maxLength={20}
+                className="w-full rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-white/30"
+              />
+            </div>
+
+            {error && <p className="text-red-400 text-xs text-center mb-3">{error}</p>}
+
+            <button
+              onClick={handleJoin}
+              disabled={isJoining || !joinUsername.trim()}
+              className={`btn-primary w-full ${
+                (isJoining || !joinUsername.trim()) ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              {isJoining ? 'Joining...' : 'Accept Duel'}
+            </button>
           </div>
-
-          <div className="mb-6">
-            <label className="text-white/70 text-sm mb-2 block">Your Name</label>
-            <input
-              type="text"
-              value={joinUsername}
-              onChange={(e) => setJoinUsername(e.target.value)}
-              placeholder="Enter your name"
-              maxLength={20}
-              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-accent-green"
-            />
-          </div>
-
-          {error && <p className="text-red-400 text-sm text-center mb-4">{error}</p>}
-
-          <button
-            onClick={handleJoin}
-            disabled={isJoining || !joinUsername.trim()}
-            className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
-              isJoining || !joinUsername.trim()
-                ? 'bg-white/10 text-white/50 cursor-not-allowed'
-                : 'bg-accent-green text-black hover:bg-accent-green/90'
-            }`}
-          >
-            {isJoining ? 'Joining...' : 'Accept Duel'}
-          </button>
         </div>
       </main>
     );
@@ -528,77 +562,81 @@ export default function DuelPage() {
     const opponent = players.find(p => p.player_key !== myPlayerKey);
 
     return (
-      <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
-        <div className="glass-panel p-6 rounded-2xl max-w-md w-full">
-          <h1 className="text-2xl font-bold text-white mb-6 text-center">⚔️ Duel Lobby</h1>
+      <main className="min-h-screen bg-bg-primary bg-grid-pattern bg-gradient-radial">
+        <Header showNav={false} />
+        <div className="min-h-screen flex items-center justify-center p-4 pt-16">
+          <div className="glass-panel p-5 rounded-xl max-w-sm w-full">
+            <h1 className="text-xl font-bold text-white mb-5 text-center">Duel Lobby</h1>
 
-          <div className="space-y-3 mb-6">
-            {myPlayer && (
-              <div className={`p-4 rounded-xl ${myPlayer.ready ? 'bg-accent-green/20 border border-accent-green/50' : 'bg-white/5'}`}>
-                <div className="flex items-center justify-between">
-                  <span className="text-white font-medium">{myPlayer.username} (You)</span>
-                  <span className={myPlayer.ready ? 'text-accent-green' : 'text-white/50'}>
-                    {myPlayer.ready ? '✓ Ready' : 'Not Ready'}
-                  </span>
+            <div className="space-y-2 mb-5">
+              {myPlayer && (
+                <div className={`p-3 rounded-lg ${myPlayer.ready ? 'bg-accent-green/10 border border-accent-green/30' : 'bg-white/5 border border-white/10'}`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-white text-sm font-medium">{myPlayer.username} (You)</span>
+                    <span className={`text-xs ${myPlayer.ready ? 'text-accent-green' : 'text-white/40'}`}>
+                      {myPlayer.ready ? 'Ready' : 'Not Ready'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {opponent ? (
+                <div className={`p-3 rounded-lg ${opponent.ready ? 'bg-accent-green/10 border border-accent-green/30' : 'bg-white/5 border border-white/10'}`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-white text-sm font-medium">{opponent.username}</span>
+                    <span className={`text-xs ${opponent.ready ? 'text-accent-green' : 'text-white/40'}`}>
+                      {opponent.ready ? 'Ready' : 'Not Ready'}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 rounded-lg bg-white/5 border-2 border-dashed border-white/20">
+                  <p className="text-white/40 text-sm text-center">Waiting for opponent...</p>
+                </div>
+              )}
+            </div>
+
+            {!opponent && (
+              <div className="mb-5">
+                <p className="text-white/50 text-xs mb-1.5">Share this link:</p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={shareUrl}
+                    readOnly
+                    className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white/60 text-xs"
+                  />
+                  <button
+                    onClick={copyLink}
+                    className="px-3 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all flex items-center gap-1.5 text-sm"
+                  >
+                    {copied ? <CheckIcon /> : <CopyIcon />}
+                    {copied ? 'Copied' : 'Copy'}
+                  </button>
                 </div>
               </div>
             )}
 
-            {opponent ? (
-              <div className={`p-4 rounded-xl ${opponent.ready ? 'bg-accent-green/20 border border-accent-green/50' : 'bg-white/5'}`}>
-                <div className="flex items-center justify-between">
-                  <span className="text-white font-medium">{opponent.username}</span>
-                  <span className={opponent.ready ? 'text-accent-green' : 'text-white/50'}>
-                    {opponent.ready ? '✓ Ready' : 'Not Ready'}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className="p-4 rounded-xl bg-white/5 border-2 border-dashed border-white/20">
-                <p className="text-white/50 text-center">Waiting for opponent...</p>
-              </div>
+            <button
+              onClick={handleReady}
+              disabled={!opponent}
+              className={`w-full py-3 rounded-lg font-semibold text-sm transition-all ${
+                !opponent
+                  ? 'bg-white/10 text-white/50 cursor-not-allowed'
+                  : myPlayer?.ready
+                    ? 'bg-white/10 text-white hover:bg-white/20'
+                    : 'bg-accent-green text-black hover:bg-accent-green-dark'
+              }`}
+            >
+              {myPlayer?.ready ? 'Cancel Ready' : 'Ready'}
+            </button>
+
+            {opponent && players.every(p => p.ready) && (
+              <p className="text-accent-green text-xs text-center mt-3 animate-pulse">
+                Starting game...
+              </p>
             )}
           </div>
-
-          {!opponent && (
-            <div className="mb-6">
-              <p className="text-white/70 text-sm mb-2">Share this link:</p>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={shareUrl}
-                  readOnly
-                  className="flex-1 bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white/70 text-sm"
-                />
-                <button
-                  onClick={copyLink}
-                  className="px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all"
-                >
-                  {copied ? '✓' : 'Copy'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          <button
-            onClick={handleReady}
-            disabled={!opponent}
-            className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
-              !opponent
-                ? 'bg-white/10 text-white/50 cursor-not-allowed'
-                : myPlayer?.ready
-                  ? 'bg-red-500/80 text-white hover:bg-red-500'
-                  : 'bg-accent-green text-black hover:bg-accent-green/90'
-            }`}
-          >
-            {myPlayer?.ready ? 'Cancel Ready' : 'Ready!'}
-          </button>
-
-          {opponent && players.every(p => p.ready) && (
-            <p className="text-accent-green text-center mt-4 animate-pulse">
-              Starting game...
-            </p>
-          )}
         </div>
       </main>
     );
@@ -608,142 +646,148 @@ export default function DuelPage() {
   const containerSize = 400;
   
   return (
-    <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
-      <div 
-        className="relative rounded-2xl overflow-hidden bg-gray-900 ring-2 ring-accent-green/30 shadow-[0_0_30px_rgba(74,222,128,0.15)]"
-        style={{ width: containerSize, height: containerSize }}
-      >
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="absolute inset-0 w-full h-full object-cover opacity-0"
-          style={{ transform: 'scaleX(-1)' }}
-        />
-        <canvas
-          ref={canvasRef}
-          width={containerSize}
-          height={containerSize}
-          className="absolute inset-0 w-full h-full"
-        />
-
-        {pageState === 'calibrating' && calibrationTrackerRef.current && (
-          <CalibrationOverlay
-            progress={calibrationTrackerRef.current.getProgress()}
-            bothHandsDetected={!trackingLost}
+    <main className="min-h-screen bg-bg-primary bg-grid-pattern bg-gradient-radial">
+      <Header showNav={false} />
+      <div className="min-h-screen flex items-center justify-center p-4 pt-16">
+        <div 
+          className="relative rounded-xl overflow-hidden bg-gray-900 ring-2 ring-accent-green/30 shadow-[0_0_30px_rgba(74,222,128,0.15)]"
+          style={{ width: containerSize, height: containerSize }}
+        >
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="absolute inset-0 w-full h-full object-cover opacity-0"
+            style={{ transform: 'scaleX(-1)' }}
           />
-        )}
-
-        {pageState === 'countdown' && (
-          <CountdownOverlay value={countdownValue} />
-        )}
-
-        {pageState === 'playing' && (
-          <GameOverlay
-            repCount={displayRepCount}
-            timeRemaining={timeRemaining}
-            elapsedTime={elapsedTime}
-            is67RepsMode={duel ? is67RepsMode(duel.duration_ms) : false}
-            trackingLost={trackingLost}
+          <canvas
+            ref={canvasRef}
+            width={containerSize}
+            height={containerSize}
+            className="absolute inset-0 w-full h-full"
           />
-        )}
 
-        {pageState === 'results' && (() => {
-          const is67Reps = duel && is67RepsMode(duel.duration_ms);
-          const formatTime = (ms: number) => (ms / 1000).toFixed(2) + 's';
-          const myPlayer = players.find(p => p.player_key === myPlayerKey);
-          const opponent = players.find(p => p.player_key !== myPlayerKey);
-          
-          const handleShareResult = async () => {
-            const myName = myPlayer?.username || 'Player 1';
-            const oppName = opponent?.username || 'Player 2';
-            const myScoreText = is67Reps ? formatTime(finalScore) : `${finalScore} reps`;
-            const oppScoreText = result?.opponentScore != null 
-              ? (is67Reps ? formatTime(result.opponentScore) : `${result.opponentScore} reps`)
-              : 'pending';
+          {pageState === 'calibrating' && calibrationTrackerRef.current && (
+            <CalibrationOverlay
+              progress={calibrationTrackerRef.current.getProgress()}
+              bothHandsDetected={!trackingLost}
+            />
+          )}
+
+          {pageState === 'countdown' && (
+            <CountdownOverlay value={countdownValue} />
+          )}
+
+          {pageState === 'playing' && (
+            <GameOverlay
+              repCount={displayRepCount}
+              timeRemaining={timeRemaining}
+              elapsedTime={elapsedTime}
+              is67RepsMode={duel ? is67RepsMode(duel.duration_ms) : false}
+              trackingLost={trackingLost}
+            />
+          )}
+
+          {pageState === 'results' && (() => {
+            const is67Reps = duel && is67RepsMode(duel.duration_ms);
+            const formatTime = (ms: number) => (ms / 1000).toFixed(2);
+            const myPlayer = players.find(p => p.player_key === myPlayerKey);
+            const opponent = players.find(p => p.player_key !== myPlayerKey);
             
-            const outcomeText = result?.outcome === 'win' ? 'won against' 
-              : result?.outcome === 'lose' ? 'lost to' 
-              : 'tied with';
-            
-            const duelUrl = `${window.location.origin}/duel/${duelId}/results`;
-            const shareText = `⚔️ 67Ranked Duel!\n${myName} ${outcomeText} ${oppName}\n${myScoreText} vs ${oppScoreText}`;
-            
-            if (navigator.share) {
-              try {
-                await navigator.share({
-                  title: '67Ranked Duel Result',
-                  text: shareText,
-                  url: duelUrl
-                });
-              } catch {
-                // User cancelled
+            const handleShareResult = async () => {
+              const myName = myPlayer?.username || 'Player 1';
+              const oppName = opponent?.username || 'Player 2';
+              const myScoreText = is67Reps ? `${formatTime(finalScore)}s` : `${finalScore} reps`;
+              const oppScoreText = result?.opponentScore != null 
+                ? (is67Reps ? `${formatTime(result.opponentScore)}s` : `${result.opponentScore} reps`)
+                : 'pending';
+              
+              const outcomeText = result?.outcome === 'win' ? 'beat' 
+                : result?.outcome === 'lose' ? 'lost to' 
+                : 'tied with';
+              
+              const duelUrl = `${window.location.origin}/duel/${duelId}/results`;
+              const shareText = `${myName} ${outcomeText} ${oppName} on 67ranked.com\n${myScoreText} vs ${oppScoreText}`;
+              
+              if (navigator.share) {
+                try {
+                  await navigator.share({
+                    title: '67Ranked Duel',
+                    text: shareText,
+                    url: duelUrl
+                  });
+                } catch {
+                  // User cancelled
+                }
+              } else {
+                await navigator.clipboard.writeText(`${shareText}\n${duelUrl}`);
+                alert('Copied!');
               }
-            } else {
-              await navigator.clipboard.writeText(`${shareText}\n\n${duelUrl}`);
-              alert('Result copied to clipboard!');
-            }
-          };
-          
-          return (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-              <div className="glass-panel p-6 rounded-2xl text-center">
-                <div className={`text-4xl font-black mb-4 ${
-                  result?.outcome === 'win' ? 'text-accent-green' :
-                  result?.outcome === 'lose' ? 'text-red-400' : 'text-yellow-400'
-                }`}>
-                  {result?.outcome === 'win' ? '🎉 YOU WIN!' :
-                   result?.outcome === 'lose' ? '😔 YOU LOSE' : '🤝 TIE!'}
-                </div>
-
-                <div className="flex justify-center gap-8 mb-6">
-                  <div className="text-center">
-                    <p className="text-white/60 text-sm">{myPlayer?.username || 'You'}</p>
-                    <p className="text-3xl font-bold text-white">
-                      {is67Reps ? formatTime(finalScore) : finalScore}
-                    </p>
-                    {is67Reps && <p className="text-white/40 text-xs">67 reps</p>}
+            };
+            
+            return (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm p-3">
+                <div className="glass-panel p-5 rounded-xl text-center w-full max-w-xs">
+                  {/* Result header */}
+                  <div className={`text-2xl font-bold mb-4 ${
+                    result?.outcome === 'win' ? 'text-accent-green' :
+                    result?.outcome === 'lose' ? 'text-red-400' : 'text-yellow-400'
+                  }`}>
+                    {result?.outcome === 'win' ? 'YOU WIN' :
+                     result?.outcome === 'lose' ? 'YOU LOSE' : 'TIE'}
                   </div>
-                  <div className="text-white/40 text-2xl self-center">vs</div>
-                  <div className="text-center">
-                    <p className="text-white/60 text-sm">{opponent?.username || 'Opponent'}</p>
-                    <p className="text-3xl font-bold text-white">
-                      {result?.opponentScore != null 
-                        ? (is67Reps ? formatTime(result.opponentScore) : result.opponentScore)
-                        : '...'}
-                    </p>
-                    {is67Reps && result?.opponentScore != null && <p className="text-white/40 text-xs">67 reps</p>}
-                  </div>
-                </div>
 
-                <div className="flex flex-col gap-2">
-                  <button
-                    onClick={handleShareResult}
-                    className="px-6 py-3 rounded-xl bg-blue-500 text-white font-semibold hover:bg-blue-600 flex items-center justify-center gap-2"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                    </svg>
-                    Share Result
-                  </button>
-                  <button
-                    onClick={() => router.push('/duel/create')}
-                    className="px-6 py-3 rounded-xl bg-purple-500 text-white font-semibold hover:bg-purple-600"
-                  >
-                    🔄 Rematch
-                  </button>
-                  <button
-                    onClick={() => router.push('/')}
-                    className="px-6 py-3 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/20"
-                  >
-                    Back to Home
-                  </button>
+                  {/* Scores */}
+                  <div className="flex justify-center items-center gap-4 mb-5">
+                    <div className="text-center">
+                      <p className="text-white/50 text-xs mb-1">{myPlayer?.username || 'You'}</p>
+                      <p className="text-2xl font-bold text-white" style={{ fontStyle: 'italic' }}>
+                        {is67Reps ? formatTime(finalScore) : finalScore}
+                      </p>
+                      {is67Reps && <p className="text-white/30 text-[10px]">seconds</p>}
+                    </div>
+                    <div className="text-white/30 text-sm">vs</div>
+                    <div className="text-center">
+                      <p className="text-white/50 text-xs mb-1">{opponent?.username || 'Opponent'}</p>
+                      <p className="text-2xl font-bold text-white" style={{ fontStyle: 'italic' }}>
+                        {result?.opponentScore != null 
+                          ? (is67Reps ? formatTime(result.opponentScore) : result.opponentScore)
+                          : '...'}
+                      </p>
+                      {is67Reps && result?.opponentScore != null && <p className="text-white/30 text-[10px]">seconds</p>}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleShareResult}
+                      className="w-full py-2.5 rounded-lg bg-accent-green text-black font-semibold text-sm hover:bg-accent-green-dark transition-all flex items-center justify-center gap-2"
+                    >
+                      <ShareIcon />
+                      Share
+                    </button>
+                    <button
+                      onClick={() => router.push('/duel/create')}
+                      className="w-full py-2.5 rounded-lg bg-white/10 text-white font-medium text-sm hover:bg-white/20 transition-all flex items-center justify-center gap-2"
+                    >
+                      <RefreshIcon />
+                      New Duel
+                    </button>
+                    <button
+                      onClick={() => router.push('/')}
+                      className="w-full py-2.5 rounded-lg bg-white/5 text-white/60 text-sm hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+                    >
+                      <HomeIcon />
+                      Home
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })()}
+            );
+          })()}
+        </div>
       </div>
     </main>
   );
