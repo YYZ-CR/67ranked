@@ -39,14 +39,14 @@ export default function Home() {
       <Header playerCount={stats?.totalGames} />
 
       {/* Main content - use dvh for mobile browsers with dynamic viewport */}
-      <div className="h-screen h-dvh flex flex-col lg:flex-row pt-10 sm:pt-12 pb-1 sm:pb-2 overflow-hidden">
+      <div className="h-screen h-dvh flex flex-col lg:flex-row pt-9 sm:pt-11 pb-1 overflow-hidden">
         {/* Game Panel - Main focus, takes most space */}
-        <div className="flex-1 p-1.5 sm:p-3 lg:p-4 flex items-center justify-center min-h-0">
+        <div className="flex-1 p-1 sm:p-2 lg:p-3 flex items-center justify-center min-h-0">
           <GamePanel onScoreSubmitted={handleScoreSubmitted} />
         </div>
 
         {/* Leaderboard Panel - Sidebar on desktop, bottom sheet on mobile */}
-        <div className="flex-shrink-0 lg:w-64 xl:w-72 p-1.5 sm:p-3 lg:p-4 lg:pl-0 h-[200px] sm:h-[260px] lg:h-auto overflow-hidden">
+        <div className="flex-shrink-0 lg:w-56 xl:w-64 p-1 sm:p-2 lg:p-3 lg:pl-0 h-[180px] sm:h-[220px] lg:h-auto overflow-hidden">
           <LeaderboardPanel refreshTrigger={refreshTrigger} />
         </div>
       </div>

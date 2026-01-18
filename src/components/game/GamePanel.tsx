@@ -56,11 +56,11 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
       if (containerRef.current) {
         const parent = containerRef.current.parentElement;
         if (parent) {
-          const width = parent.clientWidth - 16; // padding
-          const height = parent.clientHeight - 16;
-          // Use the smaller dimension to keep square, max 600px
-          const size = Math.min(width, height, 600);
-          setContainerSize(Math.max(size, 280)); // minimum 280px
+          const width = parent.clientWidth - 8; // minimal padding
+          const height = parent.clientHeight - 8;
+          // Use the smaller dimension to keep square, max 800px
+          const size = Math.min(width, height, 800);
+          setContainerSize(Math.max(size, 260)); // minimum 260px
         }
       }
     };
