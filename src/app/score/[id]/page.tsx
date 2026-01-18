@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { DURATION_6_7S, DURATION_20S, DURATION_67_REPS, is67RepsMode } from '@/types/game';
+import { TrophyIcon, ShareIcon, PlayIcon, HomeIcon, FlameIcon, TimerIcon, TargetIcon } from '@/components/ui/Icons';
 
 interface ScoreData {
   id: string;
@@ -105,12 +106,16 @@ export default function ScorePage() {
     return (
       <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
         <div className="glass-panel p-8 rounded-2xl text-center max-w-md">
-          <p className="text-red-400 text-xl mb-4">😔 Score not found</p>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center">
+            <TrophyIcon size={32} className="text-white/50" />
+          </div>
+          <h2 className="text-xl font-bold text-white mb-2">Score Not Found</h2>
           <p className="text-white/50 mb-6">This score may have been removed or the link is invalid.</p>
           <Link 
             href="/"
-            className="inline-block bg-accent-green text-black px-6 py-3 rounded-xl font-semibold hover:bg-accent-green/90 transition-all"
+            className="inline-flex items-center justify-center gap-2 bg-accent-green text-black px-6 py-3 rounded-xl font-semibold hover:bg-accent-green/90 transition-all"
           >
+            <PlayIcon size={18} />
             Play 67Ranked
           </Link>
         </div>
@@ -123,41 +128,48 @@ export default function ScorePage() {
     ? Math.round((1 - (scoreData.rank / scoreData.totalPlayers)) * 100)
     : null;
 
+  const getModeIcon = () => {
+    if (scoreData.duration_ms === DURATION_6_7S) return <FlameIcon size={16} />;
+    if (scoreData.duration_ms === DURATION_20S) return <TimerIcon size={16} />;
+    if (scoreData.duration_ms === DURATION_67_REPS) return <TargetIcon size={16} />;
+    return <TimerIcon size={16} />;
+  };
+
   return (
     <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Score Card */}
-        <div className="glass-panel p-6 rounded-2xl mb-4">
+        <div className="glass-panel p-8 rounded-2xl mb-4">
           {/* Header */}
           <div className="text-center mb-6">
-            <div className="inline-block px-4 py-1 bg-accent-green/20 rounded-full mb-3">
-              <span className="text-accent-green text-sm font-semibold">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <TrophyIcon size={28} className="text-yellow-400" />
+              <h1 className="text-3xl font-bold text-white">Score Card</h1>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-accent-green/20 rounded-full">
+              {getModeIcon()}
+              <span className="text-accent-green text-sm font-semibold uppercase tracking-wider">
                 {formatDuration(scoreData.duration_ms)}
               </span>
             </div>
-            <h1 className="text-2xl font-bold text-white mb-1">{scoreData.username}</h1>
-            {percentile !== null && (
-              <p className="text-accent-green text-sm">Top {100 - percentile}% globally</p>
-            )}
           </div>
 
-          {/* Score Display */}
-          <div className="text-center py-8 border-y border-white/10">
-            <p className="text-white/50 text-sm mb-2">
-              {is67Reps ? 'Completion Time' : 'Final Score'}
-            </p>
-            <p className="text-6xl font-black text-accent-green">
+          {/* Player Score Box */}
+          <div className="bg-accent-green/20 ring-2 ring-accent-green rounded-xl p-6 text-center mb-4">
+            <p className="text-white/60 text-sm mb-1 uppercase tracking-wider">{scoreData.username}</p>
+            <p className="text-5xl font-black text-accent-green">
               {formatScore(scoreData.score, scoreData.duration_ms)}
             </p>
             {scoreData.rank && (
               <p className="text-white/50 text-sm mt-2">
                 Rank #{scoreData.rank}
+                {percentile !== null && ` • Top ${100 - percentile}%`}
               </p>
             )}
           </div>
 
           {/* Date */}
-          <div className="text-center pt-4">
+          <div className="text-center">
             <p className="text-white/30 text-xs">
               {new Date(scoreData.created_at).toLocaleDateString('en-US', {
                 month: 'short',
@@ -168,41 +180,50 @@ export default function ScorePage() {
           </div>
         </div>
 
-        {/* CTA Button */}
-        <Link
-          href="/"
-          className="block w-full bg-accent-green text-black py-4 rounded-xl font-bold text-lg text-center hover:bg-accent-green/90 transition-all mb-3"
-        >
-          🎮 Beat {scoreData.username}&apos;s Score
-        </Link>
-
-        {/* Secondary Actions */}
-        <div className="flex gap-3">
-          <button
-            onClick={handleCopyLink}
-            className="flex-1 bg-white/10 text-white py-3 rounded-xl font-semibold hover:bg-white/20 transition-all flex items-center justify-center gap-2"
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-2">
+          {/* CTA Button */}
+          <Link
+            href="/"
+            className="w-full bg-accent-green text-black py-4 rounded-xl font-bold text-lg hover:bg-accent-green/90 transition-all flex items-center justify-center gap-2"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-            </svg>
-            {copied ? 'Copied!' : 'Copy Link'}
-          </button>
+            <PlayIcon size={22} />
+            Beat {scoreData.username}&apos;s Score
+          </Link>
+
+          {/* Share Button */}
           <button
             onClick={handleShare}
-            className="flex-1 bg-blue-500 text-white py-3 rounded-xl font-semibold hover:bg-blue-600 transition-all flex items-center justify-center gap-2"
+            className="w-full bg-blue-500 text-white py-3 rounded-xl font-semibold hover:bg-blue-600 transition-all flex items-center justify-center gap-2"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-            </svg>
+            <ShareIcon size={20} />
             Share
           </button>
+
+          {/* Copy & Home */}
+          <div className="flex gap-2">
+            <button
+              onClick={handleCopyLink}
+              className="flex-1 bg-white/10 text-white py-3 rounded-xl font-semibold hover:bg-white/20 transition-all flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+              </svg>
+              {copied ? 'Copied!' : 'Copy Link'}
+            </button>
+            <Link
+              href="/"
+              className="flex-1 bg-white/10 text-white py-3 rounded-xl font-semibold hover:bg-white/20 transition-all flex items-center justify-center gap-2"
+            >
+              <HomeIcon size={18} />
+              Home
+            </Link>
+          </div>
         </div>
 
         {/* Footer */}
         <div className="text-center mt-6">
-          <Link href="/" className="text-white/30 text-sm hover:text-white/50 transition-colors">
-            67ranked.com
-          </Link>
+          <p className="text-white/30 text-xs">67ranked.com</p>
         </div>
       </div>
     </main>
