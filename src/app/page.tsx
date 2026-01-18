@@ -41,27 +41,26 @@ export default function Home() {
       
       {/* Stats pill */}
       {stats && stats.totalGames > 0 && (
-        <div className="fixed top-16 lg:top-20 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
-          <div className="bg-black/60 backdrop-blur-md px-4 py-1.5 rounded-full border border-accent-green/20 flex items-center gap-2">
+        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
+          <div className="bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-accent-green/20 flex items-center gap-1.5">
             <span className="status-dot"></span>
-            <span className="text-white/50 text-xs font-mono uppercase tracking-wider">
+            <span className="text-white/50 text-xs font-mono">
               <span className="text-accent-green font-semibold">{stats.totalGames.toLocaleString()}</span> players
             </span>
           </div>
         </div>
       )}
 
-      <div className="min-h-screen flex flex-col lg:flex-row pt-16 lg:pt-20 pb-16">
-        {/* Game Panel */}
-        <div className="flex-shrink-0 lg:flex-1 lg:max-w-[600px] p-4 lg:p-6 flex items-center justify-center">
+      {/* Main content */}
+      <div className="h-screen flex flex-col lg:flex-row pt-12 pb-12 overflow-hidden">
+        {/* Game Panel - Main focus, takes most space */}
+        <div className="flex-1 p-2 sm:p-4 flex items-center justify-center min-h-0">
           <GamePanel onScoreSubmitted={handleScoreSubmitted} />
         </div>
 
-        {/* Leaderboard Panel */}
-        <div className="flex-1 p-4 lg:p-6 lg:pl-0 min-h-[400px] lg:min-h-0">
-          <div className="h-full lg:h-[calc(100vh-160px)] max-h-[600px] lg:max-h-none">
-            <LeaderboardPanel refreshTrigger={refreshTrigger} />
-          </div>
+        {/* Leaderboard Panel - Sidebar on desktop, bottom sheet on mobile */}
+        <div className="flex-shrink-0 lg:w-72 xl:w-80 p-2 sm:p-4 lg:pl-0 h-[280px] sm:h-[320px] lg:h-auto overflow-hidden">
+          <LeaderboardPanel refreshTrigger={refreshTrigger} />
         </div>
       </div>
 

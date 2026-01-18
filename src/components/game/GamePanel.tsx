@@ -50,18 +50,29 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
   const [containerSize, setContainerSize] = useState(400);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Update container size on resize
+  // Update container size on resize - make it fill available space
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
-        const width = containerRef.current.clientWidth;
-        setContainerSize(Math.min(width, 500));
+        const parent = containerRef.current.parentElement;
+        if (parent) {
+          const width = parent.clientWidth - 16; // padding
+          const height = parent.clientHeight - 16;
+          // Use the smaller dimension to keep square, max 600px
+          const size = Math.min(width, height, 600);
+          setContainerSize(Math.max(size, 280)); // minimum 280px
+        }
       }
     };
     
     updateSize();
     window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
+    // Small delay to ensure parent is sized
+    const timeout = setTimeout(updateSize, 100);
+    return () => {
+      window.removeEventListener('resize', updateSize);
+      clearTimeout(timeout);
+    };
   }, []);
 
   // Initialize camera and MediaPipe
@@ -399,15 +410,11 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
   return (
     <div 
       ref={containerRef}
-      className="relative flex-shrink-0 flex items-center justify-center"
-      style={{ 
-        width: '100%',
-        maxWidth: '500px'
-      }}
+      className="relative w-full h-full flex items-center justify-center"
     >
       {/* Camera container */}
       <div 
-        className="relative overflow-hidden rounded-2xl bg-gray-900 ring-2 ring-accent-green/30 shadow-[0_0_30px_rgba(74,222,128,0.15)]"
+        className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gray-900 ring-1 sm:ring-2 ring-accent-green/30 shadow-[0_0_30px_rgba(74,222,128,0.15)]"
         style={{ width: containerSize, height: containerSize }}
       >
         {/* Hidden video for MediaPipe */}
