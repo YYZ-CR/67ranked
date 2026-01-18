@@ -15,6 +15,8 @@ interface EndScreenProps {
   submitError?: string | null;
   isSubmitted?: boolean;
   scoreId?: string;
+  rank?: number;
+  percentile?: number;
 }
 
 // Icons
@@ -48,10 +50,13 @@ export function EndScreen({
   isSubmitting = false,
   submitError = null,
   isSubmitted = false,
-  scoreId
+  scoreId,
+  rank,
+  percentile
 }: EndScreenProps) {
   const [username, setUsername] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [shareError, setShareError] = useState<string | null>(null);
 
   useEffect(() => {
     const savedUsername = localStorage.getItem('67ranked_lastUsername');
@@ -101,6 +106,13 @@ export function EndScreen({
   const formatElapsedTime = (ms: number) => (ms / 1000).toFixed(2);
 
   const handleShare = async () => {
+    // For normal mode with leaderboard, require saving first
+    if (canSubmitToLeaderboard && !isSubmitted) {
+      setShareError('Save your score before sharing');
+      setTimeout(() => setShareError(null), 3000);
+      return;
+    }
+
     const shareText = is67Reps
       ? `${username || 'I'} got 67 reps in ${formatElapsedTime(elapsedTime || 0)}s on 67ranked.com`
       : `${username || 'I'} scored ${result.myScore} reps on 67ranked.com`;
@@ -172,11 +184,27 @@ export function EndScreen({
             </div>
           )}
 
-          {/* Submitted badge */}
+          {/* Submitted badge with stats */}
           {isSubmitted && (
-            <div className="mb-2.5 sm:mb-3 flex items-center justify-center gap-1.5 py-1.5 sm:py-2 px-2 sm:px-3 bg-accent-green/10 rounded-md sm:rounded-lg">
-              <CheckIcon />
-              <span className="text-[10px] sm:text-xs text-accent-green font-medium">Saved</span>
+            <div className="mb-2.5 sm:mb-3 space-y-2">
+              <div className="flex items-center justify-center gap-1.5 py-1.5 sm:py-2 px-2 sm:px-3 bg-accent-green/10 rounded-md sm:rounded-lg border border-accent-green/30">
+                <CheckIcon />
+                <span className="text-[10px] sm:text-xs text-accent-green font-medium">Saved</span>
+              </div>
+              
+              {/* Rank and Percentile */}
+              {rank && percentile && (
+                <div className="flex gap-2">
+                  <div className="flex-1 p-2 bg-white/5 rounded-md border border-white/10">
+                    <p className="text-[9px] text-white/40 uppercase tracking-wider mb-0.5">Rank</p>
+                    <p className="text-sm sm:text-base font-bold text-white">#{rank}</p>
+                  </div>
+                  <div className="flex-1 p-2 bg-white/5 rounded-md border border-white/10">
+                    <p className="text-[9px] text-white/40 uppercase tracking-wider mb-0.5">Top</p>
+                    <p className="text-sm sm:text-base font-bold text-accent-green">{percentile}%</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -227,6 +255,11 @@ export function EndScreen({
                 Share
               </button>
             </div>
+
+            {/* Share error message */}
+            {shareError && (
+              <p className="text-yellow-400 text-[9px] sm:text-[10px] text-center">{shareError}</p>
+            )}
 
             {onRematch && (
               <button 

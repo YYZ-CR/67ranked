@@ -45,6 +45,8 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
   const [finalScore, setFinalScore] = useState<number>(0);
   const [scoreId, setScoreId] = useState<string | null>(null);
   const [displayRepCount, setDisplayRepCount] = useState<number>(0);
+  const [rank, setRank] = useState<number | undefined>(undefined);
+  const [percentile, setPercentile] = useState<number | undefined>(undefined);
   
   // Container size for responsive canvas
   const [containerSize, setContainerSize] = useState(400);
@@ -387,6 +389,8 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
       
       const data = await response.json();
       setScoreId(data.scoreId);
+      setRank(data.rank);
+      setPercentile(data.percentile);
       setIsSubmitted(true);
       onScoreSubmitted?.();
     } catch (err) {
@@ -490,6 +494,8 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
             submitError={submitError}
             isSubmitted={isSubmitted}
             scoreId={scoreId || undefined}
+            rank={rank}
+            percentile={percentile}
           />
         )}
       </div>
