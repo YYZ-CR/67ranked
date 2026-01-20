@@ -60,7 +60,7 @@ export function CalibrationOverlay({ progress, bothHandsDetected, backendWarning
           </h3>
           <p className="text-white/40 text-xs sm:text-sm">
             {initState === 'loading' 
-              ? 'Downloading AI model'
+              ? 'Loading AI model'
               : 'Warming up for best performance'
             }
           </p>
