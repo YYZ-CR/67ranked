@@ -5,6 +5,8 @@ import { DURATION_6_7S, DURATION_20S, DURATION_67_REPS, is67RepsMode } from '@/t
 
 interface LeaderboardPanelProps {
   refreshTrigger?: number;
+  onMinimize?: () => void;
+  showMinimizeButton?: boolean;
 }
 
 // Icons
@@ -14,8 +16,14 @@ const RefreshIcon = ({ spinning = false }: { spinning?: boolean }) => (
   </svg>
 );
 
-export function LeaderboardPanel({ refreshTrigger }: LeaderboardPanelProps) {
-  const { entries, isLoading, error, selectedDuration, setSelectedDuration, refresh } = useLeaderboard();
+const MinimizeIcon = () => (
+  <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+export function LeaderboardPanel({ refreshTrigger, onMinimize, showMinimizeButton = false }: LeaderboardPanelProps) {
+  const { entries, isLoading, error, selectedDuration, setSelectedDuration, timeframe, setTimeframe, refresh } = useLeaderboard();
 
   // Suppress unused warning
   void refreshTrigger;
@@ -34,31 +42,64 @@ export function LeaderboardPanel({ refreshTrigger }: LeaderboardPanelProps) {
       <div className="flex-shrink-0 p-2 sm:p-3 border-b border-white/5">
         <div className="flex items-center justify-between mb-1.5 sm:mb-2">
           <h2 className="text-xs sm:text-sm font-bold text-white tracking-tight uppercase">Leaderboard</h2>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={refresh}
+              disabled={isLoading}
+              className="p-1 sm:p-1.5 rounded-md bg-white/5 hover:bg-white/10 transition-colors disabled:opacity-50"
+            >
+              <RefreshIcon spinning={isLoading} />
+            </button>
+            {showMinimizeButton && onMinimize && (
+              <button
+                onClick={onMinimize}
+                className="hidden lg:block p-1 sm:p-1.5 rounded-md bg-white/5 hover:bg-white/10 transition-colors text-white/50 hover:text-white"
+                title="Minimize leaderboard"
+              >
+                <MinimizeIcon />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Timeframe toggle */}
+        <div className="flex bg-white/5 rounded-md p-0.5 mb-1.5">
           <button
-            onClick={refresh}
-            disabled={isLoading}
-            className="p-1 sm:p-1.5 rounded-md bg-white/5 hover:bg-white/10 transition-colors disabled:opacity-50"
+            onClick={() => setTimeframe('daily')}
+            className={`
+              flex-1 py-0.5 sm:py-1 px-1.5 sm:px-2 rounded text-[10px] sm:text-xs font-semibold transition-all
+              ${timeframe === 'daily' ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white'}
+            `}
           >
-            <RefreshIcon spinning={isLoading} />
+            Daily
+          </button>
+          <button
+            onClick={() => setTimeframe('all')}
+            className={`
+              flex-1 py-0.5 sm:py-1 px-1.5 sm:px-2 rounded text-[10px] sm:text-xs font-semibold transition-all
+              ${timeframe === 'all' ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white'}
+            `}
+          >
+            All-Time
           </button>
         </div>
         
         {/* Duration tabs */}
         <div className="flex bg-white/5 rounded-md p-0.5">
           {durations.map(({ id, label }) => (
-            <button
+          <button
               key={id}
               onClick={() => setSelectedDuration(id)}
-              className={`
+            className={`
                 flex-1 py-0.5 sm:py-1 px-1.5 sm:px-2 rounded text-[10px] sm:text-xs font-semibold transition-all
                 ${selectedDuration === id
-                  ? 'bg-accent-green text-black'
+                ? 'bg-accent-green text-black'
                   : 'text-white/50 hover:text-white'
-                }
-              `}
-            >
+              }
+            `}
+          >
               {label}
-            </button>
+          </button>
           ))}
         </div>
       </div>

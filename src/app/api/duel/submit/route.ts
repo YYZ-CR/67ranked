@@ -2,7 +2,64 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { verifySessionToken, validateSubmissionTiming } from '@/lib/jwt';
 import { checkRateLimit, createRateLimitKey } from '@/lib/rate-limit';
-import { is67RepsMode } from '@/types/game';
+import { is67RepsMode, DURATION_6_7S, DURATION_20S, DURATION_67_REPS } from '@/types/game';
+
+// Helper to calculate rank stats for a score
+async function calculateRankStats(
+  supabase: ReturnType<typeof createServerClient>,
+  duration_ms: number,
+  score: number,
+  is67Reps: boolean
+) {
+  // Get total count for all-time
+  const { count: totalCount } = await supabase
+    .from('scores')
+    .select('*', { count: 'exact', head: true })
+    .eq('duration_ms', duration_ms);
+
+  // Get all-time rank (count of better scores + 1)
+  let allTimeRank = 1;
+  if (is67Reps) {
+    const { count: betterScores } = await supabase
+      .from('scores')
+      .select('*', { count: 'exact', head: true })
+      .eq('duration_ms', duration_ms)
+      .lt('score', score);
+    allTimeRank = (betterScores || 0) + 1;
+  } else {
+    const { count: betterScores } = await supabase
+      .from('scores')
+      .select('*', { count: 'exact', head: true })
+      .eq('duration_ms', duration_ms)
+      .gt('score', score);
+    allTimeRank = (betterScores || 0) + 1;
+  }
+
+  // Get daily rank (past 24 hours)
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  let dailyRank = 1;
+  if (is67Reps) {
+    const { count: betterDailyScores } = await supabase
+      .from('scores')
+      .select('*', { count: 'exact', head: true })
+      .eq('duration_ms', duration_ms)
+      .gte('created_at', twentyFourHoursAgo)
+      .lt('score', score);
+    dailyRank = (betterDailyScores || 0) + 1;
+  } else {
+    const { count: betterDailyScores } = await supabase
+      .from('scores')
+      .select('*', { count: 'exact', head: true })
+      .eq('duration_ms', duration_ms)
+      .gte('created_at', twentyFourHoursAgo)
+      .gt('score', score);
+    dailyRank = (betterDailyScores || 0) + 1;
+  }
+
+  const percentile = totalCount ? Math.round((allTimeRank / totalCount) * 100) : 1;
+
+  return { dailyRank, allTimeRank, percentile, totalCount: totalCount || 0 };
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -113,6 +170,28 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Save scores to leaderboard for standard durations
+      const isStandardDuration = duel && (
+        duel.duration_ms === DURATION_6_7S || 
+        duel.duration_ms === DURATION_20S || 
+        duel.duration_ms === DURATION_67_REPS
+      );
+
+      let myRankStats = null;
+      let opponentRankStats = null;
+
+      if (isStandardDuration && duel && myPlayer && opponent && myPlayer.score !== null && opponent.score !== null) {
+        // Insert both players' scores into the leaderboard
+        await supabase.from('scores').insert([
+          { username: myPlayer.username, score: myPlayer.score, duration_ms: duel.duration_ms },
+          { username: opponent.username, score: opponent.score, duration_ms: duel.duration_ms }
+        ]);
+
+        // Calculate rank stats for both players
+        myRankStats = await calculateRankStats(supabase, duel.duration_ms, myPlayer.score, !!is67Reps);
+        opponentRankStats = await calculateRankStats(supabase, duel.duration_ms, opponent.score, !!is67Reps);
+      }
+
       return NextResponse.json({
         status: 'complete',
         result: {
@@ -120,7 +199,9 @@ export async function POST(request: NextRequest) {
           myUsername: myPlayer?.username,
           opponentScore: opponent?.score,
           opponentUsername: opponent?.username,
-          outcome
+          outcome,
+          myRankStats,
+          opponentRankStats
         }
       });
     }

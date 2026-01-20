@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DURATION_6_7S, DURATION_20S, DURATION_67_REPS, MIN_CUSTOM_DURATION, MAX_CUSTOM_DURATION } from '@/types/game';
 import { Header } from '@/components/ui/Header';
@@ -40,7 +40,7 @@ const ArrowLeftIcon = () => (
   </svg>
 );
 
-export default function CreateDuelPage() {
+export default function DuelPage() {
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [duration, setDuration] = useState<number>(DURATION_6_7S);
@@ -48,6 +48,22 @@ export default function CreateDuelPage() {
   const [showCustom, setShowCustom] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [playerCount, setPlayerCount] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/stats');
+        if (response.ok) {
+          const data = await response.json();
+          setPlayerCount(data.totalGames);
+        }
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+      }
+    };
+    fetchStats();
+  }, []);
 
   const handleDurationSelect = (ms: number) => {
     setDuration(ms);
@@ -112,17 +128,17 @@ export default function CreateDuelPage() {
     <main className="min-h-screen bg-bg-primary bg-grid-pattern bg-gradient-radial">
       <Header />
       
-      <div className="min-h-screen flex items-center justify-center p-4 pt-16">
+      <div className="min-h-screen flex items-center justify-center p-4 pt-16 pb-12">
         <div className="glass-panel rounded-2xl w-full max-w-md animate-fade-in">
           {/* Header */}
           <div className="p-4 border-b border-white/5">
-            <button
-              onClick={() => router.push('/')}
+        <button
+          onClick={() => router.push('/')}
               className="text-white/40 hover:text-white transition-colors flex items-center gap-1.5 text-sm"
-            >
+        >
               <ArrowLeftIcon />
               <span>Back</span>
-            </button>
+        </button>
           </div>
 
           {/* Content */}
@@ -130,20 +146,20 @@ export default function CreateDuelPage() {
             {/* Title */}
             <h1 className="text-2xl font-bold text-white mb-6">
               Create a Duel
-            </h1>
+        </h1>
 
             {/* Username */}
             <div className="mb-5">
               <label className="text-xs text-white/50 block mb-1.5">Your name</label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your name"
-                maxLength={20}
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Enter your name"
+            maxLength={20}
                 className="w-full rounded-lg px-4 py-3 text-white placeholder:text-white/30"
-              />
-            </div>
+          />
+        </div>
 
             {/* Mode Selection */}
             <div className="mb-5">
@@ -152,7 +168,7 @@ export default function CreateDuelPage() {
                 {modes.map(({ id, title, subtitle, icon: Icon }) => {
                   const isSelected = duration === id && !showCustom;
                   return (
-                    <button
+            <button
                       key={id}
                       onClick={() => handleDurationSelect(id)}
                       className={`p-3 rounded-xl text-center transition-all ${
@@ -164,11 +180,11 @@ export default function CreateDuelPage() {
                       </div>
                       <p className={`text-lg font-bold ${isSelected ? 'text-white' : 'text-white/70'}`}>{title}</p>
                       <p className="text-[10px] text-white/40">{subtitle}</p>
-                    </button>
+            </button>
                   );
                 })}
-                <button
-                  onClick={handleCustomToggle}
+            <button
+              onClick={handleCustomToggle}
                   className={`p-3 rounded-xl text-center transition-all ${
                     showCustom ? 'card-selected' : 'card'
                   }`}
@@ -178,42 +194,42 @@ export default function CreateDuelPage() {
                   </div>
                   <p className={`text-base font-bold ${showCustom ? 'text-white' : 'text-white/70'}`}>Custom</p>
                   <p className="text-[10px] text-white/40">5-120s</p>
-                </button>
-              </div>
+            </button>
+          </div>
 
-              {showCustom && (
-                <div className="mt-3 flex items-center gap-2">
-                  <input
-                    type="number"
-                    value={customSeconds}
-                    onChange={(e) => handleCustomChange(e.target.value)}
-                    min={5}
-                    max={120}
-                    step="0.1"
+          {showCustom && (
+            <div className="mt-3 flex items-center gap-2">
+              <input
+                type="number"
+                value={customSeconds}
+                onChange={(e) => handleCustomChange(e.target.value)}
+                min={5}
+                max={120}
+                step="0.1"
                     className="flex-1 rounded-lg px-4 py-2.5 text-white text-center font-mono"
-                  />
+              />
                   <span className="text-white/40 text-sm">seconds</span>
-                </div>
-              )}
             </div>
+          )}
+        </div>
 
-            {error && (
-              <p className="text-red-400 text-sm text-center mb-4">{error}</p>
-            )}
+        {error && (
+          <p className="text-red-400 text-sm text-center mb-4">{error}</p>
+        )}
 
             {/* Create Button */}
-            <button
-              onClick={handleCreate}
-              disabled={isCreating || !username.trim()}
+        <button
+          onClick={handleCreate}
+          disabled={isCreating || !username.trim()}
               className={`btn-primary w-full py-3.5 ${(isCreating || !username.trim()) ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {isCreating ? 'Creating...' : 'Create Duel'}
-            </button>
+        >
+          {isCreating ? 'Creating...' : 'Create Duel'}
+        </button>
 
             {/* Info */}
             <p className="text-white/30 text-xs text-center mt-4">
-              You&apos;ll get a link to share with your opponent
-            </p>
+          You&apos;ll get a link to share with your opponent
+        </p>
           </div>
         </div>
       </div>

@@ -45,9 +45,9 @@ export async function POST(request: NextRequest) {
     
     if (!is67Reps) {
       // Validate timing for timed modes
-      const timingValidation = validateSubmissionTiming(payload, Date.now());
-      if (!timingValidation.valid) {
-        return NextResponse.json({ error: timingValidation.reason }, { status: 400 });
+    const timingValidation = validateSubmissionTiming(payload, Date.now());
+    if (!timingValidation.valid) {
+      return NextResponse.json({ error: timingValidation.reason }, { status: 400 });
       }
     }
 
@@ -92,39 +92,60 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to save score' }, { status: 500 });
     }
 
-    // Calculate rank and percentile
-    // Reuse is67Reps from earlier in the function (line 44)
-    const orderDirection = is67Reps ? 'asc' : 'desc'; // Lower time is better for 67 reps
+    // Calculate ranks and percentile
+    // is67Reps is already defined earlier in the function
     
-    // Get total count for this duration
+    // Get total count for all-time
     const { count: totalCount } = await supabase
       .from('scores')
       .select('*', { count: 'exact', head: true })
       .eq('duration_ms', payload.duration_ms);
 
-    // Get rank (count of better scores + 1)
-    let rank = 1;
+    // Get all-time rank (count of better scores + 1)
+    let allTimeRank = 1;
     if (is67Reps) {
       const { count: betterScores } = await supabase
         .from('scores')
         .select('*', { count: 'exact', head: true })
         .eq('duration_ms', payload.duration_ms)
         .lt('score', score);
-      rank = (betterScores || 0) + 1;
+      allTimeRank = (betterScores || 0) + 1;
     } else {
       const { count: betterScores } = await supabase
         .from('scores')
         .select('*', { count: 'exact', head: true })
         .eq('duration_ms', payload.duration_ms)
         .gt('score', score);
-      rank = (betterScores || 0) + 1;
+      allTimeRank = (betterScores || 0) + 1;
     }
 
-    const percentile = totalCount ? Math.round((1 - (rank - 1) / totalCount) * 100) : 100;
+    // Get daily rank (past 24 hours)
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    let dailyRank = 1;
+    if (is67Reps) {
+      const { count: betterDailyScores } = await supabase
+        .from('scores')
+        .select('*', { count: 'exact', head: true })
+        .eq('duration_ms', payload.duration_ms)
+        .gte('created_at', twentyFourHoursAgo)
+        .lt('score', score);
+      dailyRank = (betterDailyScores || 0) + 1;
+    } else {
+      const { count: betterDailyScores } = await supabase
+        .from('scores')
+        .select('*', { count: 'exact', head: true })
+        .eq('duration_ms', payload.duration_ms)
+        .gte('created_at', twentyFourHoursAgo)
+        .gt('score', score);
+      dailyRank = (betterDailyScores || 0) + 1;
+    }
+
+    const percentile = totalCount ? Math.round((allTimeRank / totalCount) * 100) : 1;
 
     return NextResponse.json({ 
       scoreId: data.id,
-      rank,
+      dailyRank,
+      allTimeRank,
       percentile,
       totalCount
     });

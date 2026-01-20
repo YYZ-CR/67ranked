@@ -11,17 +11,20 @@ export async function GET(request: NextRequest) {
     const scoreId = searchParams.get('id');
 
     // Default values for preview
-    let username = '67Ranked';
+    let username = 'Player';
     let score = 0;
     let durationMs = DURATION_6_7S;
-    let rank: number | null = null;
+    let dailyRank: number | null = null;
+    let allTimeRank: number | null = null;
+    let totalPlayers = 0;
+    let createdAt = new Date().toISOString();
 
     // Fetch actual score data if ID provided
     if (scoreId) {
       const supabase = createServerClient();
       const { data } = await supabase
         .from('scores')
-        .select('username, score, duration_ms')
+        .select('username, score, duration_ms, created_at')
         .eq('id', scoreId)
         .single();
 
@@ -29,34 +32,75 @@ export async function GET(request: NextRequest) {
         username = data.username;
         score = data.score;
         durationMs = data.duration_ms;
+        createdAt = data.created_at;
 
-        // Get rank
         const is67Reps = is67RepsMode(durationMs);
-        let rankQuery = supabase
+        
+        // Total count for all-time
+        const { count: total } = await supabase
           .from('scores')
-          .select('id', { count: 'exact' })
+          .select('*', { count: 'exact', head: true })
           .eq('duration_ms', durationMs);
+        totalPlayers = total || 0;
 
+        // All-time rank
         if (is67Reps) {
-          rankQuery = rankQuery.lt('score', score);
+          const { count } = await supabase
+            .from('scores')
+            .select('id', { count: 'exact', head: true })
+            .eq('duration_ms', durationMs)
+            .lt('score', score);
+          allTimeRank = (count || 0) + 1;
         } else {
-          rankQuery = rankQuery.gt('score', score);
+          const { count } = await supabase
+            .from('scores')
+            .select('id', { count: 'exact', head: true })
+            .eq('duration_ms', durationMs)
+            .gt('score', score);
+          allTimeRank = (count || 0) + 1;
         }
 
-        const { count } = await rankQuery;
-        rank = (count || 0) + 1;
+        // Daily rank (past 24 hours)
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        if (is67Reps) {
+          const { count } = await supabase
+            .from('scores')
+            .select('id', { count: 'exact', head: true })
+            .eq('duration_ms', durationMs)
+            .gte('created_at', twentyFourHoursAgo)
+            .lt('score', score);
+          dailyRank = (count || 0) + 1;
+        } else {
+          const { count } = await supabase
+            .from('scores')
+            .select('id', { count: 'exact', head: true })
+            .eq('duration_ms', durationMs)
+            .gte('created_at', twentyFourHoursAgo)
+            .gt('score', score);
+          dailyRank = (count || 0) + 1;
+        }
       }
     }
 
     const is67Reps = is67RepsMode(durationMs);
     const modeLabel = durationMs === DURATION_6_7S ? '6.7s Sprint' 
       : durationMs === DURATION_20S ? '20s Endurance'
-      : durationMs === DURATION_67_REPS ? '67 Reps Speedrun'
+      : durationMs === DURATION_67_REPS ? '67 Reps'
       : `${(durationMs / 1000).toFixed(1)}s`;
 
     const scoreDisplay = is67Reps 
-      ? `${(score / 1000).toFixed(2)}s`
-      : `${score} reps`;
+      ? (score / 1000).toFixed(2)
+      : score.toString();
+    
+    const scoreUnit = is67Reps ? 's' : ' reps';
+    
+    const percentile = allTimeRank && totalPlayers ? Math.round((allTimeRank / totalPlayers) * 100) : null;
+    
+    const dateStr = new Date(createdAt).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
 
     return new ImageResponse(
       (
@@ -65,95 +109,173 @@ export async function GET(request: NextRequest) {
             height: '100%',
             width: '100%',
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: '#0a0a0a',
-            backgroundImage: 'linear-gradient(rgba(74, 222, 128, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(74, 222, 128, 0.1) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
+            backgroundImage: 'radial-gradient(ellipse at center top, rgba(74, 222, 128, 0.08) 0%, transparent 50%)',
           }}
         >
-          {/* Logo */}
+          {/* Card */}
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
-              marginBottom: 20,
+              flexDirection: 'column',
+              width: 550,
+              backgroundColor: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: 24,
+              overflow: 'hidden',
             }}
           >
+            {/* Card Header */}
             <div
               style={{
-                width: 50,
-                height: 50,
-                backgroundColor: '#4ade80',
-                borderRadius: 10,
                 display: 'flex',
+                justifyContent: 'space-between',
                 alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: 15,
+                padding: '20px 28px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
               }}
             >
-              <span style={{ fontSize: 28, fontWeight: 'bold', color: '#000' }}>67</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    backgroundColor: '#4ade80',
+                    borderRadius: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <span style={{ fontSize: 14, fontWeight: 'bold', color: '#000' }}>67</span>
+                </div>
+                <span style={{ fontSize: 18, fontWeight: 600, color: '#4ade80' }}>{modeLabel}</span>
+              </div>
+              <span style={{ fontSize: 16, color: 'rgba(255,255,255,0.4)' }}>{dateStr}</span>
             </div>
-            <span style={{ fontSize: 36, fontWeight: 'bold', color: '#fff' }}>RANKED</span>
-          </div>
 
-          {/* Mode Badge */}
-          <div
-            style={{
-              backgroundColor: 'rgba(74, 222, 128, 0.2)',
-              padding: '8px 20px',
-              borderRadius: 20,
-              marginBottom: 20,
-            }}
-          >
-            <span style={{ color: '#4ade80', fontSize: 20, fontWeight: 600 }}>{modeLabel}</span>
-          </div>
+            {/* Card Body */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                padding: '40px 28px 50px',
+              }}
+            >
+              {/* Username */}
+              <div style={{ fontSize: 22, color: 'rgba(255,255,255,0.5)', marginBottom: 12 }}>
+                {username}
+              </div>
 
-          {/* Username */}
-          <div style={{ fontSize: 32, color: '#fff', marginBottom: 10 }}>{username}</div>
+              {/* Score */}
+              <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 24 }}>
+                <span
+                  style={{
+                    fontSize: 96,
+                    fontWeight: 900,
+                    color: '#4ade80',
+                    lineHeight: 1,
+                  }}
+                >
+                  {scoreDisplay}
+                </span>
+                <span
+                  style={{
+                    fontSize: 32,
+                    fontWeight: 600,
+                    color: '#4ade80',
+                    marginLeft: 4,
+                  }}
+                >
+                  {scoreUnit}
+                </span>
+              </div>
 
-          {/* Score */}
-          <div
-            style={{
-              fontSize: 80,
-              fontWeight: 900,
-              color: '#4ade80',
-              marginBottom: 10,
-            }}
-          >
-            {scoreDisplay}
-          </div>
-
-          {/* Rank */}
-          {rank && (
-            <div style={{ fontSize: 24, color: 'rgba(255,255,255,0.5)' }}>
-              Rank #{rank}
+              {/* Rank Boxes */}
+              {dailyRank && allTimeRank && percentile && (
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 12,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      padding: '12px 24px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      borderRadius: 12,
+                      minWidth: 100,
+                    }}
+                  >
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 4, fontWeight: 500 }}>DAILY</span>
+                    <span style={{ fontSize: 22, fontWeight: 'bold', color: '#fff' }}>#{dailyRank}</span>
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      padding: '12px 24px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      borderRadius: 12,
+                      minWidth: 100,
+                    }}
+                  >
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 4, fontWeight: 500 }}>ALL-TIME</span>
+                    <span style={{ fontSize: 22, fontWeight: 'bold', color: '#fff' }}>#{allTimeRank}</span>
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      padding: '12px 24px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      borderRadius: 12,
+                      minWidth: 100,
+                    }}
+                  >
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 4, fontWeight: 500 }}>TOP</span>
+                    <span style={{ fontSize: 22, fontWeight: 'bold', color: '#4ade80' }}>{percentile}%</span>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
 
-          {/* CTA */}
-          <div
-            style={{
-              marginTop: 40,
-              padding: '12px 30px',
-              backgroundColor: '#4ade80',
-              borderRadius: 12,
-            }}
-          >
-            <span style={{ color: '#000', fontSize: 20, fontWeight: 700 }}>Can you beat this?</span>
-          </div>
-
-          {/* Footer */}
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 30,
-              color: 'rgba(255,255,255,0.3)',
-              fontSize: 16,
-            }}
-          >
-            67ranked.com
+            {/* CTA */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                padding: '0 28px 32px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                  width: '100%',
+                  padding: '18px 32px',
+                  backgroundColor: '#4ade80',
+                  borderRadius: 14,
+                }}
+              >
+                <span style={{ color: '#000', fontSize: 18, fontWeight: 700 }}>
+                  Beat {username}&apos;s Score @ 67ranked.com
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       ),

@@ -95,7 +95,18 @@ export default function ChallengePage() {
     }
 
     // Use the tracker's internal rep count
-    const score = trackerRef.current?.getRepCount() || repCountRef.current || 0;
+    let score = trackerRef.current?.getRepCount() || repCountRef.current || 0;
+    
+    // Sanity check: cap score at reasonable maximum based on duration
+    if (challenge) {
+      const durationSec = challenge.duration_ms / 1000;
+      const maxReasonableScore = Math.ceil(durationSec * 20); // 20 reps/sec is superhuman
+      if (score > maxReasonableScore) {
+        console.warn(`[67ranked] Score ${score} exceeds max reasonable ${maxReasonableScore}, capping`);
+        score = maxReasonableScore;
+      }
+    }
+    
     setFinalScore(score);
 
     if (sessionTokenRef.current) {
@@ -138,9 +149,21 @@ export default function ChallengePage() {
 
     const startTime = performance.now();
     const durationMs = challenge.duration_ms;
+    let pausedTime = 0;
+    let lastFrameTime = startTime;
 
     const gameLoop = () => {
-      const elapsed = performance.now() - startTime;
+      const now = performance.now();
+      const frameDelta = now - lastFrameTime;
+      
+      // Detect if tab was backgrounded (frame took >500ms = likely paused)
+      if (frameDelta > 500) {
+        pausedTime += frameDelta;
+        console.log('[67ranked] Detected pause, adding', frameDelta, 'ms to paused time');
+      }
+      lastFrameTime = now;
+      
+      const elapsed = now - startTime - pausedTime;
       const remaining = Math.max(0, durationMs - elapsed);
       setTimeRemaining(remaining);
 
@@ -283,7 +306,7 @@ export default function ChallengePage() {
 
   if (pageState === 'loading') {
     return (
-      <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center">
+      <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center pb-12">
         <div className="text-white/50">Loading...</div>
       </main>
     );
@@ -291,7 +314,7 @@ export default function ChallengePage() {
 
   if (pageState === 'error') {
     return (
-      <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
+      <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4 pb-12">
         <div className="glass-panel p-6 rounded-2xl max-w-md w-full text-center">
           <div className="text-5xl mb-4">😔</div>
           <h2 className="text-xl font-bold text-white mb-2">Error</h2>
@@ -311,7 +334,7 @@ export default function ChallengePage() {
     const challenger = entries[0];
 
     return (
-      <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
+      <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4 pb-12">
         <div className="glass-panel p-6 rounded-2xl max-w-md w-full">
           <h1 className="text-2xl font-bold text-white mb-2 text-center">🎯 Challenge</h1>
 
@@ -395,7 +418,7 @@ export default function ChallengePage() {
     }
 
     return (
-      <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
+      <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4 pb-12">
         <div className="glass-panel p-6 rounded-2xl max-w-md w-full text-center">
           {opponentEntry && outcome ? (
             <>
@@ -470,9 +493,9 @@ export default function ChallengePage() {
   const containerSize = 400;
   
   return (
-    <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
+    <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4 pb-12">
       <div 
-        className="relative rounded-2xl overflow-hidden bg-gray-900 ring-2 ring-accent-green/30 shadow-[0_0_30px_rgba(74,222,128,0.15)]"
+        className="relative rounded-2xl overflow-hidden bg-black/30 backdrop-blur-sm border border-white/10 shadow-xl"
         style={{ width: containerSize, height: containerSize }}
       >
         <video

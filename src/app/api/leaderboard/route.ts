@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const durationParam = searchParams.get('duration_ms');
+    const timeframe = searchParams.get('timeframe') || 'daily';
 
     // Validate duration parameter
     if (!durationParam) {
@@ -26,13 +27,22 @@ export async function GET(request: NextRequest) {
     const supabase = createServerClient();
     const is67Reps = is67RepsMode(duration);
 
+    // Build query
+    let query = supabase
+      .from('scores')
+      .select('id, username, score, created_at')
+      .eq('duration_ms', duration);
+
+    // Filter by timeframe if daily
+    if (timeframe === 'daily') {
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      query = query.gte('created_at', twentyFourHoursAgo);
+    }
+
     // Fetch top 100 scores for the specified duration
     // For 67 reps mode: lower time is better (ASC)
     // For timed modes: higher reps is better (DESC)
-    const { data: scores, error: dbError } = await supabase
-      .from('scores')
-      .select('id, username, score, created_at')
-      .eq('duration_ms', duration)
+    const { data: scores, error: dbError } = await query
       .order('score', { ascending: is67Reps }) // ASC for time, DESC for reps
       .order('created_at', { ascending: true })
       .limit(100);

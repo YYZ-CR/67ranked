@@ -15,7 +15,8 @@ interface EndScreenProps {
   submitError?: string | null;
   isSubmitted?: boolean;
   scoreId?: string;
-  rank?: number;
+  dailyRank?: number;
+  allTimeRank?: number;
   percentile?: number;
 }
 
@@ -39,6 +40,14 @@ const CheckIcon = () => (
   </svg>
 );
 
+const DownloadIcon = () => (
+  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" strokeLinecap="round" strokeLinejoin="round" />
+    <polyline points="7 10 12 15 17 10" strokeLinecap="round" strokeLinejoin="round" />
+    <line x1="12" y1="15" x2="12" y2="3" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export function EndScreen({
   result,
   duration,
@@ -51,7 +60,8 @@ export function EndScreen({
   submitError = null,
   isSubmitted = false,
   scoreId,
-  rank,
+  dailyRank,
+  allTimeRank,
   percentile
 }: EndScreenProps) {
   const [username, setUsername] = useState('');
@@ -131,6 +141,163 @@ export function EndScreen({
     }
   };
 
+  const handleDownload = async () => {
+    if (!isSubmitted || !username) return;
+    
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const scale = 2;
+    const width = 600;
+    const height = 440;
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+    ctx.scale(scale, scale);
+
+    // Background
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(0, 0, width, height);
+
+    // Subtle green radial glow
+    const gradient = ctx.createRadialGradient(width / 2, 0, 0, width / 2, 0, 300);
+    gradient.addColorStop(0, 'rgba(74, 222, 128, 0.08)');
+    gradient.addColorStop(1, 'transparent');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
+
+    // Card dimensions
+    const cardX = 32;
+    const cardY = 20;
+    const cardW = width - 64;
+    const cardH = 400;
+    const radius = 16;
+
+    // Card background
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+    ctx.beginPath();
+    ctx.roundRect(cardX, cardY, cardW, cardH, radius);
+    ctx.fill();
+
+    // Card border
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Header
+    const headerY = cardY;
+    const headerH = 48;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.beginPath();
+    ctx.moveTo(cardX, headerY + headerH);
+    ctx.lineTo(cardX + cardW, headerY + headerH);
+    ctx.stroke();
+
+    // Mode label
+    const modeLabel = duration === DURATION_6_7S ? '6.7s Sprint' 
+      : duration === DURATION_20S ? '20s Endurance'
+      : duration === DURATION_67_REPS ? '67 Reps' : '';
+    ctx.fillStyle = '#4ade80';
+    ctx.font = '500 16px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(modeLabel, cardX + 20, headerY + headerH / 2);
+
+    // Body
+    const bodyY = headerY + headerH + 32;
+
+    // Username
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.font = '16px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    const displayUsername = username.length > 20 ? username.slice(0, 17) + '...' : username;
+    ctx.fillText(displayUsername, width / 2, bodyY);
+
+    // Score
+    const scoreStr = is67Reps ? ((elapsedTime || 0) / 1000).toFixed(2) : result.myScore.toString();
+    const scoreUnit = is67Reps ? 's' : ' reps';
+    
+    ctx.save();
+    ctx.fillStyle = '#4ade80';
+    ctx.font = '900 88px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    const scoreY = bodyY + 85;
+    ctx.translate(width / 2, scoreY);
+    ctx.transform(1, 0, -0.12, 1, 0, 0);
+    ctx.fillText(scoreStr, 0, 0);
+    const scoreWidth = ctx.measureText(scoreStr).width;
+    ctx.restore();
+
+    // Score unit
+    ctx.save();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.font = '400 28px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.translate(width / 2 + scoreWidth / 2 + 4, scoreY);
+    ctx.transform(1, 0, -0.12, 1, 0, 0);
+    ctx.fillText(scoreUnit, 0, 0);
+    ctx.restore();
+
+    // Rank boxes
+    if (dailyRank && allTimeRank && percentile) {
+      const boxY = bodyY + 115;
+      const boxH = 52;
+      const boxW = 120;
+      const boxGap = 12;
+      const totalBoxWidth = boxW * 3 + boxGap * 2;
+      const startX = (width - totalBoxWidth) / 2;
+
+      const drawRankBox = (x: number, label: string, value: string, isGreen: boolean = false) => {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(x, boxY, boxW, boxH, 8);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.font = '500 10px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(label.toUpperCase(), x + boxW / 2, boxY + 10);
+
+        ctx.fillStyle = isGreen ? '#4ade80' : '#fff';
+        ctx.font = 'bold 18px system-ui, -apple-system, sans-serif';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(value, x + boxW / 2, boxY + boxH - 8);
+      };
+
+      drawRankBox(startX, 'Daily', `#${dailyRank}`);
+      drawRankBox(startX + boxW + boxGap, 'All-Time', `#${allTimeRank}`);
+      drawRankBox(startX + (boxW + boxGap) * 2, 'Top', `${percentile}%`, true);
+    }
+
+    // CTA Button
+    const ctaY = cardY + cardH - 70;
+    const ctaH = 50;
+    const ctaX = cardX + 20;
+    const ctaW = cardW - 40;
+
+    ctx.fillStyle = '#4ade80';
+    ctx.beginPath();
+    ctx.roundRect(ctaX, ctaY, ctaW, ctaH, 12);
+    ctx.fill();
+
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 16px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`Beat ${username}'s Score @ 67ranked.com`, width / 2, ctaY + ctaH / 2);
+
+    // Download
+    const link = document.createElement('a');
+    link.download = `67ranked-${username}-${scoreStr.replace('.', '_')}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
+
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm p-1.5 sm:p-2 z-50">
       <div className="glass-panel rounded-lg sm:rounded-xl w-full max-w-xs sm:max-w-sm animate-scale-in overflow-hidden">
@@ -193,11 +360,15 @@ export function EndScreen({
               </div>
               
               {/* Rank and Percentile */}
-              {rank && percentile && (
+              {dailyRank && allTimeRank && percentile && (
                 <div className="flex gap-2">
                   <div className="flex-1 p-2 bg-white/5 rounded-md border border-white/10">
-                    <p className="text-[9px] text-white/40 uppercase tracking-wider mb-0.5">Rank</p>
-                    <p className="text-sm sm:text-base font-bold text-white">#{rank}</p>
+                    <p className="text-[9px] text-white/40 uppercase tracking-wider mb-0.5">Daily</p>
+                    <p className="text-sm sm:text-base font-bold text-white">#{dailyRank}</p>
+                  </div>
+                  <div className="flex-1 p-2 bg-white/5 rounded-md border border-white/10">
+                    <p className="text-[9px] text-white/40 uppercase tracking-wider mb-0.5">All-Time</p>
+                    <p className="text-sm sm:text-base font-bold text-white">#{allTimeRank}</p>
                   </div>
                   <div className="flex-1 p-2 bg-white/5 rounded-md border border-white/10">
                     <p className="text-[9px] text-white/40 uppercase tracking-wider mb-0.5">Top</p>
@@ -206,6 +377,17 @@ export function EndScreen({
                 </div>
               )}
             </div>
+          )}
+
+          {/* Download button - own row after rank info */}
+          {isSubmitted && (
+            <button 
+              onClick={handleDownload} 
+              className="w-full mb-2.5 sm:mb-3 p-2 bg-white/5 rounded-md border border-white/10 hover:bg-white/10 transition-colors flex items-center justify-center gap-1.5"
+            >
+              <DownloadIcon />
+              <span className="text-[10px] sm:text-xs font-medium text-white/70">Download Image</span>
+            </button>
           )}
 
           {/* Username input */}
@@ -242,14 +424,14 @@ export function EndScreen({
             <div className="flex gap-1.5 sm:gap-2">
               <button 
                 onClick={onPlayAgain} 
-                className="flex-1 py-1.5 sm:py-2 px-2 sm:px-3 rounded-md sm:rounded-lg text-[10px] sm:text-sm font-medium text-white/70 bg-white/5 hover:bg-white/10 transition-all flex items-center justify-center gap-1 sm:gap-1.5"
+                className="flex-1 py-1.5 sm:py-2 px-2 sm:px-3 rounded-md sm:rounded-lg text-[10px] sm:text-sm font-medium text-white/70 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white transition-all flex items-center justify-center gap-1 sm:gap-1.5"
               >
                 <RefreshIcon />
                 Again
               </button>
               <button 
                 onClick={handleShare} 
-                className="flex-1 py-1.5 sm:py-2 px-2 sm:px-3 rounded-md sm:rounded-lg text-[10px] sm:text-sm font-medium text-white/70 bg-white/5 hover:bg-white/10 transition-all flex items-center justify-center gap-1 sm:gap-1.5"
+                className="flex-1 py-1.5 sm:py-2 px-2 sm:px-3 rounded-md sm:rounded-lg text-[10px] sm:text-sm font-medium text-white/70 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white transition-all flex items-center justify-center gap-1 sm:gap-1.5"
               >
                 <ShareIcon />
                 Share
@@ -264,7 +446,7 @@ export function EndScreen({
             {onRematch && (
               <button 
                 onClick={onRematch} 
-                className="w-full py-1.5 sm:py-2 px-2 sm:px-3 rounded-md sm:rounded-lg text-[10px] sm:text-sm font-medium text-white/70 bg-white/5 hover:bg-white/10 transition-all flex items-center justify-center gap-1 sm:gap-1.5"
+                className="w-full py-1.5 sm:py-2 px-2 sm:px-3 rounded-md sm:rounded-lg text-[10px] sm:text-sm font-medium text-white/70 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white transition-all flex items-center justify-center gap-1 sm:gap-1.5"
               >
                 <RefreshIcon />
                 Rematch

@@ -5,12 +5,16 @@ import { LeaderboardEntry, DURATION_6_7S } from '@/types/game';
 
 const REFRESH_INTERVAL = 60000; // 60 seconds
 
+export type LeaderboardTimeframe = 'daily' | 'all';
+
 export interface UseLeaderboardReturn {
   entries: LeaderboardEntry[];
   isLoading: boolean;
   error: string | null;
   selectedDuration: number;
   setSelectedDuration: (duration: number) => void;
+  timeframe: LeaderboardTimeframe;
+  setTimeframe: (timeframe: LeaderboardTimeframe) => void;
   refresh: () => Promise<void>;
 }
 
@@ -19,15 +23,16 @@ export function useLeaderboard(): UseLeaderboardReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDuration, setSelectedDuration] = useState<number>(DURATION_6_7S);
+  const [timeframe, setTimeframe] = useState<LeaderboardTimeframe>('daily');
   
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchLeaderboard = useCallback(async (duration: number) => {
+  const fetchLeaderboard = useCallback(async (duration: number, tf: LeaderboardTimeframe) => {
     try {
       setIsLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/leaderboard?duration_ms=${duration}`);
+      const response = await fetch(`/api/leaderboard?duration_ms=${duration}&timeframe=${tf}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch leaderboard');
@@ -44,18 +49,18 @@ export function useLeaderboard(): UseLeaderboardReturn {
   }, []);
 
   const refresh = useCallback(async () => {
-    await fetchLeaderboard(selectedDuration);
-  }, [fetchLeaderboard, selectedDuration]);
+    await fetchLeaderboard(selectedDuration, timeframe);
+  }, [fetchLeaderboard, selectedDuration, timeframe]);
 
-  // Fetch when duration changes
+  // Fetch when duration or timeframe changes
   useEffect(() => {
-    fetchLeaderboard(selectedDuration);
-  }, [selectedDuration, fetchLeaderboard]);
+    fetchLeaderboard(selectedDuration, timeframe);
+  }, [selectedDuration, timeframe, fetchLeaderboard]);
 
   // Auto-refresh every 60 seconds
   useEffect(() => {
     intervalRef.current = setInterval(() => {
-      fetchLeaderboard(selectedDuration);
+      fetchLeaderboard(selectedDuration, timeframe);
     }, REFRESH_INTERVAL);
 
     return () => {
@@ -63,7 +68,7 @@ export function useLeaderboard(): UseLeaderboardReturn {
         clearInterval(intervalRef.current);
       }
     };
-  }, [selectedDuration, fetchLeaderboard]);
+  }, [selectedDuration, timeframe, fetchLeaderboard]);
 
   return {
     entries,
@@ -71,6 +76,8 @@ export function useLeaderboard(): UseLeaderboardReturn {
     error,
     selectedDuration,
     setSelectedDuration,
+    timeframe,
+    setTimeframe,
     refresh
   };
 }

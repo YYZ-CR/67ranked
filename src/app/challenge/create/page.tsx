@@ -75,7 +75,16 @@ export default function CreateChallengePage() {
       cancelAnimationFrame(animationFrameRef.current);
     }
 
-    const score = repCounterRef.current?.getRepCount() || 0;
+    let score = repCounterRef.current?.getRepCount() || 0;
+    
+    // Sanity check: cap score at reasonable maximum based on duration
+    const durationSec = durationRef.current / 1000;
+    const maxReasonableScore = Math.ceil(durationSec * 20); // 20 reps/sec is superhuman
+    if (score > maxReasonableScore) {
+      console.warn(`[67ranked] Score ${score} exceeds max reasonable ${maxReasonableScore}, capping`);
+      score = maxReasonableScore;
+    }
+    
     setFinalScore(score);
     setPageState('submitting');
 
@@ -107,9 +116,21 @@ export default function CreateChallengePage() {
     setPageState('playing');
 
     const startTime = performance.now();
+    let pausedTime = 0;
+    let lastFrameTime = startTime;
 
     const gameLoop = () => {
-      const elapsed = performance.now() - startTime;
+      const now = performance.now();
+      const frameDelta = now - lastFrameTime;
+      
+      // Detect if tab was backgrounded (frame took >500ms = likely paused)
+      if (frameDelta > 500) {
+        pausedTime += frameDelta;
+        console.log('[67ranked] Detected pause, adding', frameDelta, 'ms to paused time');
+      }
+      lastFrameTime = now;
+      
+      const elapsed = now - startTime - pausedTime;
       const remaining = Math.max(0, durationMs - elapsed);
       setTimeRemaining(remaining);
 
@@ -281,7 +302,7 @@ export default function CreateChallengePage() {
 
   if (pageState === 'setup') {
     return (
-      <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
+      <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4 pb-12">
         <div className="glass-panel p-6 rounded-2xl max-w-md w-full">
           <button
             onClick={() => router.push('/')}
@@ -383,7 +404,7 @@ export default function CreateChallengePage() {
 
   if (pageState === 'done') {
     return (
-      <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
+      <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4 pb-12">
         <div className="glass-panel p-6 rounded-2xl max-w-md w-full text-center">
           <div className="text-5xl mb-4">🎯</div>
           <h2 className="text-2xl font-bold text-white mb-2">Challenge Created!</h2>
@@ -428,8 +449,8 @@ export default function CreateChallengePage() {
 
   // Game states
   return (
-    <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4">
-      <div className="relative w-full max-w-md aspect-square rounded-2xl overflow-hidden bg-gray-900">
+    <main className="min-h-screen bg-bg-primary bg-grid-pattern flex items-center justify-center p-4 pb-12">
+      <div className="relative w-full max-w-md aspect-square rounded-2xl overflow-hidden bg-black/30 backdrop-blur-sm border border-white/10 shadow-xl">
         <video
           ref={videoRef}
           autoPlay

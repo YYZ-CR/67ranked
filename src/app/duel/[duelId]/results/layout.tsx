@@ -65,6 +65,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://67ranked.vercel.app';
+    const ogImageUrl = `${appUrl}/api/og/duel?id=${duelId}`;
 
     return {
       title: `⚔️ Duel: ${player1.username} vs ${player2.username} | 67Ranked`,
@@ -75,11 +76,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         url: `${appUrl}/duel/${duelId}/results`,
         siteName: '67Ranked',
         type: 'website',
+        images: [
+          {
+            url: ogImageUrl,
+            width: 1200,
+            height: 630,
+            alt: `${player1.username} vs ${player2.username} duel results`,
+          },
+        ],
       },
       twitter: {
         card: 'summary_large_image',
         title: `⚔️ Duel: ${player1.username} vs ${player2.username}`,
         description,
+        images: [ogImageUrl],
       },
     };
   } catch {

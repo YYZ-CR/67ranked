@@ -22,35 +22,60 @@ export async function GET(
       return NextResponse.json({ error: 'Score not found' }, { status: 404 });
     }
 
-    // Calculate rank for this score
     const is67Reps = is67RepsMode(score.duration_ms);
-    
-    // Count how many scores are better than this one
-    let rankQuery = supabase
-      .from('scores')
-      .select('id', { count: 'exact' })
-      .eq('duration_ms', score.duration_ms);
-    
-    if (is67Reps) {
-      // For 67 reps, lower score (time) is better
-      rankQuery = rankQuery.lt('score', score.score);
-    } else {
-      // For timed modes, higher score is better
-      rankQuery = rankQuery.gt('score', score.score);
-    }
 
-    const { count: betterScores } = await rankQuery;
-    const rank = (betterScores || 0) + 1;
-
-    // Get total players for this mode
+    // Get total players for all-time
     const { count: totalPlayers } = await supabase
       .from('scores')
       .select('id', { count: 'exact' })
       .eq('duration_ms', score.duration_ms);
 
+    // Calculate all-time rank
+    let allTimeRank = 1;
+    if (is67Reps) {
+      const { count: betterScores } = await supabase
+        .from('scores')
+        .select('id', { count: 'exact' })
+        .eq('duration_ms', score.duration_ms)
+        .lt('score', score.score);
+      allTimeRank = (betterScores || 0) + 1;
+    } else {
+      const { count: betterScores } = await supabase
+        .from('scores')
+        .select('id', { count: 'exact' })
+        .eq('duration_ms', score.duration_ms)
+        .gt('score', score.score);
+      allTimeRank = (betterScores || 0) + 1;
+    }
+
+    // Calculate daily rank (past 24 hours)
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    let dailyRank = 1;
+    if (is67Reps) {
+      const { count: betterDailyScores } = await supabase
+        .from('scores')
+        .select('id', { count: 'exact' })
+        .eq('duration_ms', score.duration_ms)
+        .gte('created_at', twentyFourHoursAgo)
+        .lt('score', score.score);
+      dailyRank = (betterDailyScores || 0) + 1;
+    } else {
+      const { count: betterDailyScores } = await supabase
+        .from('scores')
+        .select('id', { count: 'exact' })
+        .eq('duration_ms', score.duration_ms)
+        .gte('created_at', twentyFourHoursAgo)
+        .gt('score', score.score);
+      dailyRank = (betterDailyScores || 0) + 1;
+    }
+
+    const percentile = totalPlayers ? Math.round((allTimeRank / totalPlayers) * 100) : 1;
+
     return NextResponse.json({
       ...score,
-      rank,
+      dailyRank,
+      allTimeRank,
+      percentile,
       totalPlayers: totalPlayers || 0
     });
   } catch (error) {

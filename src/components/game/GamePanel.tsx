@@ -29,6 +29,8 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
   const finishTimeRef = useRef<number>(0);
   const gameModeRef = useRef<{ is67Reps: boolean; duration: number }>({ is67Reps: false, duration: 0 });
   const selectedDurationRef = useRef<number>(DURATION_6_7S); // Store selected duration immediately
+  const pausedTimeRef = useRef<number>(0); // Track accumulated paused time
+  const lastFrameTimeRef = useRef<number>(0); // Track last frame for pause detection
   
   // State
   const [gameState, setGameState] = useState<GameState>('idle');
@@ -45,7 +47,8 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
   const [finalScore, setFinalScore] = useState<number>(0);
   const [scoreId, setScoreId] = useState<string | null>(null);
   const [displayRepCount, setDisplayRepCount] = useState<number>(0);
-  const [rank, setRank] = useState<number | undefined>(undefined);
+  const [dailyRank, setDailyRank] = useState<number | undefined>(undefined);
+  const [allTimeRank, setAllTimeRank] = useState<number | undefined>(undefined);
   const [percentile, setPercentile] = useState<number | undefined>(undefined);
   
   // Container size for responsive canvas
@@ -58,13 +61,13 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
       if (containerRef.current) {
         const parent = containerRef.current.parentElement;
         if (parent) {
-          const width = parent.clientWidth - 8; // minimal padding
-          const height = parent.clientHeight - 8;
-          // Use the smaller dimension to keep square
-          // Max 400px on mobile (<640px), 550px on larger screens
+          const width = parent.clientWidth - 24; // padding
+          const height = parent.clientHeight - 24;
+          // Camera feed is square - constrain to available space
+          // Max 400px on mobile (<640px), 600px on larger screens
           const isMobile = window.innerWidth < 640;
-          const maxSize = isMobile ? 400 : 550;
-          const size = Math.min(width, height, maxSize);
+          const maxSize = isMobile ? 380 : 600;
+          const size = Math.min(height, width, maxSize);
           setContainerSize(Math.max(size, 240)); // minimum 240px
         }
       }
@@ -126,13 +129,13 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
     };
   }, []);
 
-  // Handle start button
+  // Handle start button - go to mode selection first
   const handleStart = async () => {
     await initializeCamera();
-    setGameState('calibrating');
+    setGameState('selecting');
   };
 
-  // Handle calibration
+  // Handle calibration - after mode selection, go to countdown when calibrated
   useEffect(() => {
     if (gameState !== 'calibrating' || !calibrationTrackerRef.current) return;
     
@@ -140,7 +143,7 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
       if (calibrationTrackerRef.current && trackingState) {
         const calibrated = calibrationTrackerRef.current.processFrame(trackingState.bothHandsDetected);
         if (calibrated) {
-          setGameState('selecting');
+          startCountdown();
         }
       }
       
@@ -166,7 +169,7 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
     
     // Duel mode redirects to its own page
     if (mode === 'duel') {
-      window.location.href = '/duel/create';
+      window.location.href = '/duel';
       return;
     }
     
@@ -185,8 +188,9 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
       const data = await response.json();
       sessionTokenRef.current = data.token;
       
-      // Start countdown
-      startCountdown();
+      // Go to calibration (countdown starts after calibration)
+      setGameState('calibrating');
+      calibrationTrackerRef.current?.reset();
     } catch (err) {
       console.error('Session error:', err);
       setCameraError('Failed to start game. Please try again.');
@@ -224,6 +228,7 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
     setDisplayRepCount(0);
     gameEndedRef.current = false;
     finishTimeRef.current = 0;
+    pausedTimeRef.current = 0; // Reset paused time
     
     // Use ref value, but fall back to state if ref wasn't set (defensive)
     // Also verify the ref was actually updated (not still the initial value when 67 reps is selected)
@@ -245,7 +250,9 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
     
     setTimeRemaining(gameDuration);
     setElapsedTime(0);
-    gameStartTimeRef.current = performance.now();
+    const now = performance.now();
+    gameStartTimeRef.current = now;
+    lastFrameTimeRef.current = now;
     setGameState('playing');
     
     // Start game loop
@@ -255,7 +262,19 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
         return;
       }
       
-      const elapsed = performance.now() - gameStartTimeRef.current;
+      const now = performance.now();
+      const frameDelta = now - lastFrameTimeRef.current;
+      
+      // Detect if tab was backgrounded (frame took >500ms = likely paused)
+      // In this case, add the gap to paused time so we don't count it
+      if (frameDelta > 500) {
+        pausedTimeRef.current += frameDelta;
+        console.log('[67ranked] Detected pause, adding', frameDelta, 'ms to paused time');
+      }
+      lastFrameTimeRef.current = now;
+      
+      // Calculate actual game time (excluding paused time)
+      const elapsed = now - gameStartTimeRef.current - pausedTimeRef.current;
       const { is67Reps: currentIs67Reps, duration: currentDuration } = gameModeRef.current;
       
       // Update time display based on mode
@@ -313,14 +332,24 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
     
     if (wasSpeedrunMode) {
       // 67 reps mode: score is the elapsed time in ms
-      const elapsed = finalElapsedMs ?? finishTimeRef.current ?? (performance.now() - gameStartTimeRef.current);
+      const elapsed = finalElapsedMs ?? finishTimeRef.current ?? (performance.now() - gameStartTimeRef.current - pausedTimeRef.current);
       const roundedElapsed = Math.round(elapsed);
       setFinalScore(roundedElapsed);
       setElapsedTime(roundedElapsed);
       setDisplayRepCount(67); // Ensure display shows 67
     } else {
       // Timed mode: score is the rep count
-      const score = repCountRef.current; // Use ref, not tracker (might be cleaned up)
+      let score = repCountRef.current; // Use ref, not tracker (might be cleaned up)
+      
+      // Sanity check: cap score at reasonable maximum based on duration
+      // Even the fastest humanly possible is ~15 reps/second, so max ~100 for 6.7s, ~300 for 20s
+      const durationSec = gameModeRef.current.duration / 1000;
+      const maxReasonableScore = Math.ceil(durationSec * 20); // 20 reps/sec is superhuman
+      if (score > maxReasonableScore) {
+        console.warn(`[67ranked] Score ${score} exceeds max reasonable ${maxReasonableScore}, capping`);
+        score = maxReasonableScore;
+      }
+      
       setFinalScore(score);
     }
     
@@ -389,7 +418,8 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
       
       const data = await response.json();
       setScoreId(data.scoreId);
-      setRank(data.rank);
+      setDailyRank(data.dailyRank);
+      setAllTimeRank(data.allTimeRank);
       setPercentile(data.percentile);
       setIsSubmitted(true);
       onScoreSubmitted?.();
@@ -421,7 +451,7 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
     >
       {/* Camera container */}
       <div 
-        className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gray-900 ring-1 sm:ring-2 ring-accent-green/30 shadow-[0_0_30px_rgba(74,222,128,0.15)]"
+        className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-black/30 backdrop-blur-sm border border-white/10 shadow-xl"
         style={{ width: containerSize, height: containerSize }}
       >
         {/* Hidden video for MediaPipe */}
@@ -455,6 +485,8 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
           <CalibrationOverlay
             progress={calibrationTrackerRef.current.getProgress()}
             bothHandsDetected={trackingState?.bothHandsDetected || false}
+            backendWarning={trackingState?.backendWarning}
+            initState={trackingState?.initState}
           />
         )}
 
@@ -494,7 +526,8 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
             submitError={submitError}
             isSubmitted={isSubmitted}
             scoreId={scoreId || undefined}
-            rank={rank}
+            dailyRank={dailyRank}
+            allTimeRank={allTimeRank}
             percentile={percentile}
           />
         )}

@@ -44,15 +44,14 @@ const CheckIcon = () => (
 );
 
 export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
-  const [mode, setMode] = useState<GameMode>('normal');
+  const [mode] = useState<GameMode>('normal'); // Always normal mode on solo page
   const [duration, setDuration] = useState<number>(DURATION_6_7S);
   const [customSeconds, setCustomSeconds] = useState<string>('10.0');
   const [showCustom, setShowCustom] = useState(false);
 
   useEffect(() => {
-    const savedMode = localStorage.getItem('67ranked_lastMode') as GameMode | null;
+    // Only restore duration, not mode (mode is determined by page)
     const savedDuration = localStorage.getItem('67ranked_lastDuration');
-    if (savedMode) setMode(savedMode);
     if (savedDuration) {
       const d = parseInt(savedDuration, 10);
       setDuration(d);
@@ -84,7 +83,6 @@ export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
   };
 
   const handleStart = () => {
-    localStorage.setItem('67ranked_lastMode', mode);
     localStorage.setItem('67ranked_lastDuration', duration.toString());
     onSelect(mode, duration);
   };
@@ -103,32 +101,6 @@ export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
         {/* Header */}
         <div className="p-3 sm:p-4 pb-2 sm:pb-3 text-center border-b border-white/5">
           <h2 className="text-base sm:text-xl font-bold text-white tracking-tight">SELECT MODE</h2>
-          
-          {/* Mode toggle */}
-          <div className="flex justify-center mt-2 sm:mt-3">
-            <div className="inline-flex bg-white/5 rounded-full p-0.5 sm:p-1">
-              <button
-                onClick={() => setMode('normal')}
-                className={`px-4 sm:px-5 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all ${
-                  mode === 'normal' 
-                    ? 'bg-accent-green text-black' 
-                    : 'text-white/60 hover:text-white'
-                }`}
-              >
-                SOLO
-              </button>
-              <button
-                onClick={() => setMode('duel')}
-                className={`px-4 sm:px-5 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all ${
-                  mode === 'duel' 
-                    ? 'bg-accent-green text-black' 
-                    : 'text-white/60 hover:text-white'
-                }`}
-              >
-                DUEL
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Duration Cards */}
@@ -156,8 +128,8 @@ export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
                     isSelected ? 'bg-accent-green/20 text-accent-green' : 'bg-white/5 text-white/40'
                   }`}>
                     <Icon />
-                  </div>
-                  
+          </div>
+          
                   {/* Content */}
                   <p className={`text-base sm:text-lg font-bold ${isSelected ? 'text-white' : 'text-white/90'}`}>
                     {title}
@@ -177,13 +149,13 @@ export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
                 </button>
               );
             })}
-          </div>
+        </div>
 
           {/* Custom Duration */}
           {duration !== DURATION_67_REPS && (
             <div className="mt-2 sm:mt-3">
-              <button
-                onClick={handleCustomToggle}
+            <button
+              onClick={handleCustomToggle}
                 className={`w-full p-2.5 sm:p-3 rounded-lg sm:rounded-xl text-left transition-all flex items-center gap-2 sm:gap-3 ${
                   showCustom ? 'card-selected' : 'card hover:border-white/20'
                 }`}
@@ -195,31 +167,31 @@ export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className={`font-semibold text-xs sm:text-sm ${showCustom ? 'text-white' : 'text-white/70'}`}>
-                    Custom
+              Custom
                   </span>
                   <span className="text-white/40 text-[10px] sm:text-xs ml-1">5-120s</span>
-                </div>
-                {showCustom && (
+          </div>
+          {showCustom && (
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    <input
-                      type="number"
-                      value={customSeconds}
-                      onChange={(e) => handleCustomChange(e.target.value)}
+                <input
+                  type="number"
+                  value={customSeconds}
+                  onChange={(e) => handleCustomChange(e.target.value)}
                       onClick={(e) => e.stopPropagation()}
                       min={5}
                       max={120}
-                      step="0.1"
+                  step="0.1"
                       className="w-14 sm:w-16 bg-white/10 border border-white/20 rounded-md sm:rounded-lg px-1.5 sm:px-2 py-1 sm:py-1.5 text-white text-center font-mono text-xs sm:text-sm"
-                    />
+                />
                     <span className="text-white/50 text-[10px] sm:text-xs">s</span>
-                  </div>
-                )}
+            </div>
+          )}
               </button>
-              
-              {mode === 'normal' && showCustom && (
+          
+          {mode === 'normal' && showCustom && (
                 <p className="text-white/40 text-[10px] sm:text-xs mt-1 px-1">
                   Not ranked on leaderboard
-                </p>
+            </p>
               )}
             </div>
           )}
