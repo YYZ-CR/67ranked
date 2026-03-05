@@ -368,7 +368,8 @@ export default function DuelPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             token: sessionTokenRef.current,
-            score
+            score,
+            repEvents: trackerRef.current?.getRepEvents() || []
           })
         });
 
@@ -412,6 +413,9 @@ export default function DuelPage() {
     const durationMs = currentDuel.duration_ms;
     let pausedTime = 0;
     let lastFrameTime = startTime;
+
+    // Set game start time on tracker for rep event timestamps
+    trackerRef.current?.setGameStartTime(startTime);
 
     const gameLoop = () => {
       const now = performance.now();

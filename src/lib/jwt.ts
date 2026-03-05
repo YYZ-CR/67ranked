@@ -2,7 +2,11 @@ import { SignJWT, jwtVerify } from 'jose';
 import type { GameMode } from '@/types/game';
 import { DURATION_67_REPS } from '@/types/game';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'dev-secret-min-32-chars-long!!!');
+const jwtSecretRaw = process.env.JWT_SECRET;
+if (!jwtSecretRaw) {
+  throw new Error('Missing JWT_SECRET environment variable');
+}
+const JWT_SECRET = new TextEncoder().encode(jwtSecretRaw);
 
 // Session token payload
 export interface SessionPayload {
@@ -10,6 +14,8 @@ export interface SessionPayload {
   duration_ms: number;
   issued_at: number;
   expires_at: number;
+  // Unique session identifier for single-use enforcement
+  session_id: string;
   // Scoped identifiers for duel/challenge
   duel_id?: string;
   challenge_id?: string;
@@ -22,7 +28,7 @@ const GRACE_WINDOW_MS = 30000;
 const MAX_67_REPS_DURATION_MS = 600000;
 
 // Create a session token
-export async function createSessionToken(payload: Omit<SessionPayload, 'issued_at' | 'expires_at'>): Promise<string> {
+export async function createSessionToken(payload: Omit<SessionPayload, 'issued_at' | 'expires_at' | 'session_id'>): Promise<string> {
   const now = Date.now();
   
   // For 67 reps mode, use a longer expiry since we don't know how long it will take
@@ -30,8 +36,12 @@ export async function createSessionToken(payload: Omit<SessionPayload, 'issued_a
   const effectiveDuration = is67RepsMode ? MAX_67_REPS_DURATION_MS : payload.duration_ms;
   const expiresAt = now + effectiveDuration + GRACE_WINDOW_MS + 60000;
   
+  // Generate a unique session ID for single-use enforcement
+  const session_id = crypto.randomUUID();
+  
   const fullPayload: SessionPayload = {
     ...payload,
+    session_id,
     issued_at: now,
     expires_at: expiresAt
   };

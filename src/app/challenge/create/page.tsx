@@ -96,7 +96,8 @@ export default function CreateChallengePage() {
           body: JSON.stringify({
             token: sessionTokenRef.current,
             score,
-            username: usernameRef.current.trim()
+            username: usernameRef.current.trim(),
+            repEvents: repCounterRef.current?.getRepEvents() || []
           })
         });
       } catch (err) {
@@ -118,6 +119,9 @@ export default function CreateChallengePage() {
     const startTime = performance.now();
     let pausedTime = 0;
     let lastFrameTime = startTime;
+
+    // Set game start time on rep counter for rep event timestamps
+    repCounterRef.current?.setGameStartTime(startTime);
 
     const gameLoop = () => {
       const now = performance.now();

@@ -80,6 +80,16 @@ export interface ChallengeState {
   }[];
 }
 
+// Rep event recorded during gameplay for server-side validation
+export interface RepEvent {
+  /** Timestamp in ms since game start */
+  t: number;
+  /** Left wrist Y position (0-1 normalized) */
+  ly: number;
+  /** Right wrist Y position (0-1 normalized) */
+  ry: number;
+}
+
 // Game result
 export interface GameResult {
   myScore: number;

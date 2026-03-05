@@ -253,6 +253,10 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
     const now = performance.now();
     gameStartTimeRef.current = now;
     lastFrameTimeRef.current = now;
+    
+    // Set game start time on tracker for rep event timestamps
+    trackerRef.current?.setGameStartTime(now);
+    
     setGameState('playing');
     
     // Start game loop
@@ -407,7 +411,8 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
         body: JSON.stringify({
           token: sessionTokenRef.current,
           username,
-          score: finalScore
+          score: finalScore,
+          repEvents: trackerRef.current?.getRepEvents() || []
         })
       });
       

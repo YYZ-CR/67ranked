@@ -117,7 +117,8 @@ export default function ChallengePage() {
           body: JSON.stringify({
             token: sessionTokenRef.current,
             score,
-            username: usernameRef.current.trim()
+            username: usernameRef.current.trim(),
+            repEvents: trackerRef.current?.getRepEvents() || []
           })
         });
 
@@ -151,6 +152,9 @@ export default function ChallengePage() {
     const durationMs = challenge.duration_ms;
     let pausedTime = 0;
     let lastFrameTime = startTime;
+
+    // Set game start time on tracker for rep event timestamps
+    trackerRef.current?.setGameStartTime(startTime);
 
     const gameLoop = () => {
       const now = performance.now();

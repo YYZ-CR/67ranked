@@ -322,6 +322,10 @@ export class RepCounter {
   private lastLeftX = 0.5;
   private lastRightX = 0.5;
 
+  // Rep event log for anti-cheat validation
+  private repEvents: Array<{ t: number; ly: number; ry: number }> = [];
+  private gameStartTime = 0;
+
   reset(): void {
     this.repCount = 0;
     this.state = 'WAITING';
@@ -340,6 +344,13 @@ export class RepCounter {
     this.rightWasLost = false;
     this.lastLeftX = 0.5;
     this.lastRightX = 0.5;
+    this.repEvents = [];
+    this.gameStartTime = 0;
+  }
+
+  /** Set the game start time for relative rep event timestamps */
+  setGameStartTime(timestamp: number): void {
+    this.gameStartTime = timestamp;
   }
   
   getState(): RepState {
@@ -348,6 +359,11 @@ export class RepCounter {
   
   getRepCount(): number {
     return this.repCount;
+  }
+
+  /** Get recorded rep events for anti-cheat validation */
+  getRepEvents(): Array<{ t: number; ly: number; ry: number }> {
+    return [...this.repEvents];
   }
 
   /**
@@ -378,6 +394,13 @@ export class RepCounter {
       this.repCount++;
       this.reversalCount -= 2;
       repCompleted = true;
+
+      // Record rep event for anti-cheat validation
+      this.repEvents.push({
+        t: Math.round(timestamp - this.gameStartTime),
+        ly: leftSignal ? Math.round(leftSignal.y * 1000) / 1000 : 0,
+        ry: rightSignal ? Math.round(rightSignal.y * 1000) / 1000 : 0
+      });
     }
 
     return repCompleted;
@@ -843,8 +866,18 @@ export class HandTracker {
     this.wristAdapter.reset();
   }
   
+  /** Set the game start time for relative rep event timestamps */
+  setGameStartTime(timestamp: number): void {
+    this.repCounter.setGameStartTime(timestamp);
+  }
+  
   getRepCount(): number {
     return this.repCounter.getRepCount();
+  }
+
+  /** Get recorded rep events for anti-cheat validation */
+  getRepEvents(): Array<{ t: number; ly: number; ry: number }> {
+    return this.repCounter.getRepEvents();
   }
   
   getLastResults(): Results | null {

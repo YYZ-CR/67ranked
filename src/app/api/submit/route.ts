@@ -3,12 +3,13 @@ import { verifySessionToken, validateSubmissionTiming } from '@/lib/jwt';
 import { validateUsername } from '@/lib/profanity';
 import { checkRateLimit, createRateLimitKey } from '@/lib/rate-limit';
 import { createServerClient } from '@/lib/supabase/server';
+import { parseRepEvents, validateTimedRepEvents, validate67RepsEvents } from '@/lib/validation';
 import { DURATION_6_7S, DURATION_20S, DURATION_67_REPS, is67RepsMode } from '@/types/game';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { token, username, score } = body;
+    const { token, username, score, repEvents: rawRepEvents } = body;
 
     // Validate required fields
     if (!token || typeof token !== 'string') {
@@ -21,6 +22,12 @@ export async function POST(request: NextRequest) {
 
     if (typeof score !== 'number' || score < 0 || !Number.isInteger(score)) {
       return NextResponse.json({ error: 'Score must be a non-negative integer' }, { status: 400 });
+    }
+
+    // Parse and validate rep events
+    const repEvents = parseRepEvents(rawRepEvents);
+    if (!repEvents) {
+      return NextResponse.json({ error: 'Invalid or missing rep events' }, { status: 400 });
     }
 
     // Validate username
@@ -51,6 +58,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Validate rep events against the claimed score
+    if (is67Reps) {
+      const repValidation = validate67RepsEvents(repEvents, score);
+      if (!repValidation.valid) {
+        return NextResponse.json({ error: repValidation.reason }, { status: 400 });
+      }
+    } else {
+      const repValidation = validateTimedRepEvents(repEvents, score, payload.duration_ms);
+      if (!repValidation.valid) {
+        return NextResponse.json({ error: repValidation.reason }, { status: 400 });
+      }
+    }
+
     // Only allow leaderboard submissions for standard durations
     if (payload.duration_ms !== DURATION_6_7S && payload.duration_ms !== DURATION_20S && payload.duration_ms !== DURATION_67_REPS) {
       return NextResponse.json(
@@ -76,18 +96,24 @@ export async function POST(request: NextRequest) {
     // Insert score into database
     // For 67 reps mode, score is elapsed time in ms
     // For timed modes, score is rep count
+    // session_id enforces single-use tokens (unique constraint in DB)
     const supabase = createServerClient();
     const { data, error: dbError } = await supabase
       .from('scores')
       .insert({
         username,
         score,
-        duration_ms: payload.duration_ms
+        duration_ms: payload.duration_ms,
+        session_id: payload.session_id
       })
       .select('id')
       .single();
 
     if (dbError) {
+      // Check for duplicate session_id (token reuse attempt)
+      if (dbError.code === '23505' && dbError.message?.includes('session_id')) {
+        return NextResponse.json({ error: 'This session has already been used' }, { status: 400 });
+      }
       console.error('Database error:', dbError);
       return NextResponse.json({ error: 'Failed to save score' }, { status: 500 });
     }
