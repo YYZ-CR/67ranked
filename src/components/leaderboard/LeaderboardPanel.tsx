@@ -65,15 +65,6 @@ export function LeaderboardPanel({ refreshTrigger, onMinimize, showMinimizeButto
         {/* Timeframe toggle */}
         <div className="flex bg-white/5 rounded-md p-0.5 mb-1.5">
           <button
-            onClick={() => setTimeframe('daily')}
-            className={`
-              flex-1 py-0.5 sm:py-1 px-1.5 sm:px-2 rounded text-[10px] sm:text-xs font-semibold transition-all
-              ${timeframe === 'daily' ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white'}
-            `}
-          >
-            Daily
-          </button>
-          <button
             onClick={() => setTimeframe('all')}
             className={`
               flex-1 py-0.5 sm:py-1 px-1.5 sm:px-2 rounded text-[10px] sm:text-xs font-semibold transition-all
@@ -81,6 +72,15 @@ export function LeaderboardPanel({ refreshTrigger, onMinimize, showMinimizeButto
             `}
           >
             All-Time
+          </button>
+          <button
+            onClick={() => setTimeframe('daily')}
+            className={`
+              flex-1 py-0.5 sm:py-1 px-1.5 sm:px-2 rounded text-[10px] sm:text-xs font-semibold transition-all
+              ${timeframe === 'daily' ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white'}
+            `}
+          >
+            Daily
           </button>
         </div>
         

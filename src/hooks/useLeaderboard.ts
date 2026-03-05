@@ -23,7 +23,7 @@ export function useLeaderboard(): UseLeaderboardReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDuration, setSelectedDuration] = useState<number>(DURATION_6_7S);
-  const [timeframe, setTimeframe] = useState<LeaderboardTimeframe>('daily');
+  const [timeframe, setTimeframe] = useState<LeaderboardTimeframe>('all');
   
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
