@@ -97,7 +97,7 @@ export default function CreateChallengePage() {
             token: sessionTokenRef.current,
             score,
             username: usernameRef.current.trim(),
-            repEvents: repCounterRef.current?.getRepEvents() || []
+            poseSamples: repCounterRef.current?.getPoseSamples() || []
           })
         });
       } catch (err) {

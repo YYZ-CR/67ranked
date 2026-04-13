@@ -412,7 +412,7 @@ export function GamePanel({ onScoreSubmitted }: GamePanelProps) {
           token: sessionTokenRef.current,
           username,
           score: finalScore,
-          repEvents: trackerRef.current?.getRepEvents() || []
+          poseSamples: trackerRef.current?.getPoseSamples() || []
         })
       });
       

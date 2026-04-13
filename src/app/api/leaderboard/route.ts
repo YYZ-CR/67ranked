@@ -27,11 +27,12 @@ export async function GET(request: NextRequest) {
     const supabase = createServerClient();
     const is67Reps = is67RepsMode(duration);
 
-    // Build query
+    // Build query — exclude flagged (auto-hidden suspicious) scores
     let query = supabase
       .from('scores')
       .select('id, username, score, created_at')
-      .eq('duration_ms', duration);
+      .eq('duration_ms', duration)
+      .eq('flagged', false);
 
     // Filter by timeframe if daily
     if (timeframe === 'daily') {

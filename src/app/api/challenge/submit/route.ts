@@ -3,12 +3,12 @@ import { createServerClient } from '@/lib/supabase/server';
 import { verifySessionToken, validateSubmissionTiming } from '@/lib/jwt';
 import { validateUsername } from '@/lib/profanity';
 import { checkRateLimit, createRateLimitKey } from '@/lib/rate-limit';
-import { parseRepEvents, validateTimedRepEvents } from '@/lib/validation';
+import { parsePoseSamples, validatePoseSamples } from '@/lib/validation';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { token, score, username, repEvents: rawRepEvents } = body;
+    const { token, score, username, poseSamples: rawPoseSamples } = body;
 
     if (!token || typeof token !== 'string') {
       return NextResponse.json({ error: 'Token is required' }, { status: 400 });
@@ -22,10 +22,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Score must be a non-negative integer' }, { status: 400 });
     }
 
-    // Parse and validate rep events
-    const repEvents = parseRepEvents(rawRepEvents);
-    if (!repEvents) {
-      return NextResponse.json({ error: 'Invalid or missing rep events' }, { status: 400 });
+    // Parse pose samples
+    const poseSamples = parsePoseSamples(rawPoseSamples);
+    if (!poseSamples) {
+      return NextResponse.json({ error: 'Invalid or missing pose samples' }, { status: 400 });
     }
 
     // Validate username
@@ -54,10 +54,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: timingValidation.reason }, { status: 400 });
     }
 
-    // Validate rep events against the claimed score
-    const repValidation = validateTimedRepEvents(repEvents, score, payload.duration_ms);
-    if (!repValidation.valid) {
-      return NextResponse.json({ error: repValidation.reason }, { status: 400 });
+    // Server-side rep count replay: verify client score against server-computed count
+    const poseSampleValidation = validatePoseSamples(poseSamples, score, payload.duration_ms);
+    if (!poseSampleValidation.valid) {
+      return NextResponse.json({ error: poseSampleValidation.reason }, { status: 400 });
     }
 
     // Rate limiting

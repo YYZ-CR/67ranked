@@ -24,19 +24,21 @@ export async function GET(
 
     const is67Reps = is67RepsMode(score.duration_ms);
 
-    // Get total players for all-time
+    // Get total players for all-time (excluding flagged)
     const { count: totalPlayers } = await supabase
       .from('scores')
       .select('id', { count: 'exact' })
-      .eq('duration_ms', score.duration_ms);
+      .eq('duration_ms', score.duration_ms)
+      .eq('flagged', false);
 
-    // Calculate all-time rank
+    // Calculate all-time rank (excluding flagged)
     let allTimeRank = 1;
     if (is67Reps) {
       const { count: betterScores } = await supabase
         .from('scores')
         .select('id', { count: 'exact' })
         .eq('duration_ms', score.duration_ms)
+        .eq('flagged', false)
         .lt('score', score.score);
       allTimeRank = (betterScores || 0) + 1;
     } else {
@@ -44,11 +46,12 @@ export async function GET(
         .from('scores')
         .select('id', { count: 'exact' })
         .eq('duration_ms', score.duration_ms)
+        .eq('flagged', false)
         .gt('score', score.score);
       allTimeRank = (betterScores || 0) + 1;
     }
 
-    // Calculate daily rank (past 24 hours)
+    // Calculate daily rank (past 24 hours, excluding flagged)
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     let dailyRank = 1;
     if (is67Reps) {
@@ -56,6 +59,7 @@ export async function GET(
         .from('scores')
         .select('id', { count: 'exact' })
         .eq('duration_ms', score.duration_ms)
+        .eq('flagged', false)
         .gte('created_at', twentyFourHoursAgo)
         .lt('score', score.score);
       dailyRank = (betterDailyScores || 0) + 1;
@@ -64,6 +68,7 @@ export async function GET(
         .from('scores')
         .select('id', { count: 'exact' })
         .eq('duration_ms', score.duration_ms)
+        .eq('flagged', false)
         .gte('created_at', twentyFourHoursAgo)
         .gt('score', score.score);
       dailyRank = (betterDailyScores || 0) + 1;

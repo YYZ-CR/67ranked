@@ -72,8 +72,9 @@ export function validateSubmissionTiming(
 ): { valid: boolean; reason?: string } {
   const { issued_at, duration_ms, expires_at } = payload;
   
-  // Must be after the round could have started (issued + small buffer)
-  const minSubmitTime = issued_at + 1000; // At least 1 second after issue
+  // Must not be submitted before the game duration has nearly elapsed
+  // Allow submission in the last 1 second of the game (duration - 1000ms)
+  const minSubmitTime = issued_at + duration_ms - 1000;
   if (submissionTime < minSubmitTime) {
     return { valid: false, reason: 'Submission too early' };
   }

@@ -16,6 +16,7 @@ export interface Database {
           score: number;
           duration_ms: number;
           created_at: string;
+          flagged: boolean;
         };
         Insert: {
           id?: string;
@@ -23,6 +24,7 @@ export interface Database {
           score: number;
           duration_ms: number;
           created_at?: string;
+          flagged?: boolean;
         };
         Update: {
           id?: string;
@@ -30,6 +32,7 @@ export interface Database {
           score?: number;
           duration_ms?: number;
           created_at?: string;
+          flagged?: boolean;
         };
       };
       duels: {

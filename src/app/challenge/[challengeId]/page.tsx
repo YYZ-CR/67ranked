@@ -118,7 +118,7 @@ export default function ChallengePage() {
             token: sessionTokenRef.current,
             score,
             username: usernameRef.current.trim(),
-            repEvents: trackerRef.current?.getRepEvents() || []
+            poseSamples: trackerRef.current?.getPoseSamples() || []
           })
         });
 

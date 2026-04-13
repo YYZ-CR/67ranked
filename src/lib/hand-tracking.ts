@@ -32,6 +32,11 @@ import {
 // Re-export types for compatibility
 export type { NormalizedLandmark, NormalizedLandmarkList, BackendType, InitState };
 
+// Import shared rep-counting logic (no browser/TF deps — also used server-side)
+export type { WristState, WristSignal, RepState, PoseSample } from './rep-counter';
+import { RepCounter } from './rep-counter';
+import type { WristState, WristSignal } from './rep-counter';
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -46,17 +51,6 @@ export interface Results {
 export interface PoseResults {
   image: HTMLCanvasElement;
   poseLandmarks?: NormalizedLandmarkList;
-}
-
-// Wrist tracking state: GOOD = full confidence, WEAK = hands-only, LOST = no tracking
-export type WristState = 'GOOD' | 'WEAK' | 'LOST';
-
-// WristSignal: stable output per frame with state information
-export interface WristSignal {
-  x: number;           // Normalized 0-1
-  y: number;           // Normalized 0-1
-  score: number;       // Confidence 0-1
-  state: WristState;   // Tracking quality
 }
 
 export type RepState = 'WAITING' | 'TRACKING';
@@ -101,28 +95,6 @@ const WRIST_SCORE_WEAK = 0.35;   // Minimum wrist score for WEAK state
 
 // Hold duration for WEAK state (ms) - how long to trust cached direction
 const WEAK_HOLD_DURATION = 250;
-
-// Reacquisition cooldown (ms) - pause counting after LOST->GOOD/WEAK transition
-// This prevents false reps from sudden reappearance
-const REACQUIRE_COOLDOWN_MS = 120;
-
-// Velocity gating - minimum wrist speed to count direction change
-// Units: normalized position per second (e.g., 1.0 = full screen height per second)
-// Tune this based on frame rate. At 30fps, ~0.03 per frame = 0.9 per second
-const V_MIN = 0.9;
-
-// Displacement gating - minimum distance traveled since last reversal
-// Units: normalized (0-1), where 1 = full screen height
-// This prevents micro-oscillations from counting as reps
-const D_MIN = 0.06;
-
-// Edge jitter zone - increase thresholds when wrist is near frame edges
-const EDGE_ZONE = 0.03;          // 3% of frame dimensions
-const EDGE_V_MULTIPLIER = 1.5;   // Increase V_MIN by 50% near edges
-const EDGE_D_MULTIPLIER = 1.5;   // Increase D_MIN by 50% near edges
-
-// Direction hysteresis deadband - minimum Y movement to register direction change
-const DIRECTION_DEADBAND = 0.015;
 
 // Smoothing for WEAK state (exponential moving average)
 const WEAK_SMOOTHING_ALPHA = 0.3;
@@ -276,304 +248,7 @@ class WristSignalAdapter {
   }
 }
 
-// ============================================================================
-// REP COUNTER (with anti-fake rep logic)
-// ============================================================================
-
-/**
- * RepCounter - Peak/Valley detection using wrist positions.
- * 
- * Implements anti-fake rep logic:
- * 1. Reacquisition cooldown: Pause counting after LOST->tracked transition
- * 2. Confidence gating: Only count when GOOD or WEAK+recent GOOD
- * 3. Velocity gating: Minimum speed to register direction change
- * 4. Displacement gating: Minimum travel since last reversal
- * 5. Edge jitter protection: Stricter thresholds near frame edges
- * 6. Hysteresis deadband: Minimum Y movement for direction change
- */
-export class RepCounter {
-  private repCount = 0;
-  private state: RepState = 'WAITING';
-  
-  // Per-wrist tracking state
-  private lastLeftY: number | null = null;
-  private lastRightY: number | null = null;
-  private lastLeftTimestamp = 0;
-  private lastRightTimestamp = 0;
-  
-  // Direction tracking
-  private leftMovingDown: boolean | null = null;
-  private rightMovingDown: boolean | null = null;
-  
-  // Reversal counting (2 reversals = 1 rep)
-  private reversalCount = 0;
-  
-  // Displacement tracking since last reversal
-  private leftDisplacement = 0;
-  private rightDisplacement = 0;
-  
-  // Reacquisition cooldown state
-  private leftLostTime = 0;
-  private rightLostTime = 0;
-  private leftWasLost = false;
-  private rightWasLost = false;
-  
-  // Last known X positions for edge detection
-  private lastLeftX = 0.5;
-  private lastRightX = 0.5;
-
-  // Rep event log for anti-cheat validation
-  private repEvents: Array<{ t: number; ly: number; ry: number }> = [];
-  private gameStartTime = 0;
-
-  reset(): void {
-    this.repCount = 0;
-    this.state = 'WAITING';
-    this.lastLeftY = null;
-    this.lastRightY = null;
-    this.lastLeftTimestamp = 0;
-    this.lastRightTimestamp = 0;
-    this.leftMovingDown = null;
-    this.rightMovingDown = null;
-    this.reversalCount = 0;
-    this.leftDisplacement = 0;
-    this.rightDisplacement = 0;
-    this.leftLostTime = 0;
-    this.rightLostTime = 0;
-    this.leftWasLost = false;
-    this.rightWasLost = false;
-    this.lastLeftX = 0.5;
-    this.lastRightX = 0.5;
-    this.repEvents = [];
-    this.gameStartTime = 0;
-  }
-
-  /** Set the game start time for relative rep event timestamps */
-  setGameStartTime(timestamp: number): void {
-    this.gameStartTime = timestamp;
-  }
-  
-  getState(): RepState {
-    return this.state;
-  }
-  
-  getRepCount(): number {
-    return this.repCount;
-  }
-
-  /** Get recorded rep events for anti-cheat validation */
-  getRepEvents(): Array<{ t: number; ly: number; ry: number }> {
-    return [...this.repEvents];
-  }
-
-  /**
-   * Process wrist signals and count reps.
-   * Returns true if a rep was completed this frame.
-   */
-  processSignals(
-    leftSignal: WristSignal | null,
-    rightSignal: WristSignal | null,
-    timestamp: number
-  ): boolean {
-    const leftValid = this.processArmSignal(leftSignal, 'left', timestamp);
-    const rightValid = this.processArmSignal(rightSignal, 'right', timestamp);
-
-    // Need both arms for tracking
-    if (!leftValid || !rightValid) {
-      return false;
-    }
-
-    // Move to TRACKING state if not already
-    if (this.state === 'WAITING') {
-      this.state = 'TRACKING';
-    }
-
-    // Check for reps (every 2 reversals = 1 rep)
-    let repCompleted = false;
-    while (this.reversalCount >= 2) {
-      this.repCount++;
-      this.reversalCount -= 2;
-      repCompleted = true;
-
-      // Record rep event for anti-cheat validation
-      this.repEvents.push({
-        t: Math.round(timestamp - this.gameStartTime),
-        ly: leftSignal ? Math.round(leftSignal.y * 1000) / 1000 : 0,
-        ry: rightSignal ? Math.round(rightSignal.y * 1000) / 1000 : 0
-      });
-    }
-
-    return repCompleted;
-  }
-
-  private processArmSignal(
-    signal: WristSignal | null,
-    side: 'left' | 'right',
-    timestamp: number
-  ): boolean {
-    const isLeft = side === 'left';
-    
-    // Handle lost tracking
-    if (!signal || signal.state === 'LOST') {
-      if (isLeft) {
-        if (!this.leftWasLost) {
-          this.leftWasLost = true;
-          this.leftLostTime = timestamp;
-        }
-      } else {
-        if (!this.rightWasLost) {
-          this.rightWasLost = true;
-          this.rightLostTime = timestamp;
-        }
-      }
-      return false;
-    }
-
-    // Handle reacquisition cooldown
-    const wasLost = isLeft ? this.leftWasLost : this.rightWasLost;
-    const lostTime = isLeft ? this.leftLostTime : this.rightLostTime;
-    
-    if (wasLost) {
-      // Clear lost flag
-      if (isLeft) {
-        this.leftWasLost = false;
-      } else {
-        this.rightWasLost = false;
-      }
-      
-      // Check if within cooldown period
-      if (timestamp - lostTime < REACQUIRE_COOLDOWN_MS) {
-        // Update position without counting (reset direction tracking)
-        if (isLeft) {
-          this.lastLeftY = signal.y;
-          this.lastLeftX = signal.x;
-          this.lastLeftTimestamp = timestamp;
-          this.leftMovingDown = null;
-          this.leftDisplacement = 0;
-        } else {
-          this.lastRightY = signal.y;
-          this.lastRightX = signal.x;
-          this.lastRightTimestamp = timestamp;
-          this.rightMovingDown = null;
-          this.rightDisplacement = 0;
-        }
-        return true; // Valid signal, but not counting reps yet
-      }
-    }
-
-    // Confidence gating: Only count if GOOD state
-    // (WEAK state passes through for tracking but with stricter velocity/displacement)
-    const canCount = signal.state === 'GOOD';
-
-    // Get previous state
-    const lastY = isLeft ? this.lastLeftY : this.lastRightY;
-    const lastTimestamp = isLeft ? this.lastLeftTimestamp : this.lastRightTimestamp;
-    const lastX = isLeft ? this.lastLeftX : this.lastRightX;
-
-    // Initialize if first valid frame
-    if (lastY === null) {
-      if (isLeft) {
-        this.lastLeftY = signal.y;
-        this.lastLeftX = signal.x;
-        this.lastLeftTimestamp = timestamp;
-      } else {
-        this.lastRightY = signal.y;
-        this.lastRightX = signal.x;
-        this.lastRightTimestamp = timestamp;
-      }
-      return true;
-    }
-
-    // Calculate velocity (units/sec)
-    const dt = Math.max(1, timestamp - lastTimestamp) / 1000; // Convert to seconds
-    const dy = signal.y - lastY;
-    const velocity = Math.abs(dy / dt);
-
-    // Edge jitter detection
-    const nearEdge = this.isNearEdge(signal.x, signal.y);
-    const vMin = nearEdge ? V_MIN * EDGE_V_MULTIPLIER : V_MIN;
-    const dMin = nearEdge ? D_MIN * EDGE_D_MULTIPLIER : D_MIN;
-
-    // Update displacement tracking
-    if (isLeft) {
-      this.leftDisplacement += Math.abs(dy);
-    } else {
-      this.rightDisplacement += Math.abs(dy);
-    }
-    const displacement = isLeft ? this.leftDisplacement : this.rightDisplacement;
-
-    // Check for direction change (with hysteresis deadband)
-    const movingDown = isLeft ? this.leftMovingDown : this.rightMovingDown;
-    const currentDirection = dy > DIRECTION_DEADBAND ? true : 
-                            dy < -DIRECTION_DEADBAND ? false : 
-                            movingDown; // Keep previous if in deadband
-
-    // Process direction change if conditions met
-    if (currentDirection !== null && 
-        currentDirection !== movingDown && 
-        canCount &&
-        velocity >= vMin &&
-        displacement >= dMin) {
-      // Valid reversal detected!
-      this.reversalCount++;
-      
-      // Reset displacement for this arm
-      if (isLeft) {
-        this.leftDisplacement = 0;
-      } else {
-        this.rightDisplacement = 0;
-      }
-    }
-
-    // Update state
-    if (isLeft) {
-      this.lastLeftY = signal.y;
-      this.lastLeftX = signal.x;
-      this.lastLeftTimestamp = timestamp;
-      if (currentDirection !== null) {
-        this.leftMovingDown = currentDirection;
-      }
-    } else {
-      this.lastRightY = signal.y;
-      this.lastRightX = signal.x;
-      this.lastRightTimestamp = timestamp;
-      if (currentDirection !== null) {
-        this.rightMovingDown = currentDirection;
-      }
-    }
-
-    return true;
-  }
-
-  /**
-   * Check if position is near frame edges (where jitter is more common)
-   */
-  private isNearEdge(x: number, y: number): boolean {
-    return x < EDGE_ZONE || 
-           x > (1 - EDGE_ZONE) || 
-           y < EDGE_ZONE || 
-           y > (1 - EDGE_ZONE);
-  }
-  
-  // Legacy method for compatibility
-  processWrists(leftWristY: number | null, rightWristY: number | null): boolean {
-    // Convert to signals (assume GOOD state for legacy calls)
-    const now = performance.now();
-    const leftSignal = leftWristY !== null 
-      ? { x: 0.5, y: leftWristY, score: 1, state: 'GOOD' as WristState }
-      : null;
-    const rightSignal = rightWristY !== null
-      ? { x: 0.5, y: rightWristY, score: 1, state: 'GOOD' as WristState }
-      : null;
-    
-    return this.processSignals(leftSignal, rightSignal, now);
-  }
-  
-  // Legacy method for compatibility
-  processFrame(leftLandmarks: NormalizedLandmarkList | null, rightLandmarks: NormalizedLandmarkList | null): boolean {
-    return false;
-  }
-}
+// RepCounter is now in ./rep-counter — imported above
 
 // ============================================================================
 // CALIBRATION TRACKER
@@ -878,6 +553,11 @@ export class HandTracker {
   /** Get recorded rep events for anti-cheat validation */
   getRepEvents(): Array<{ t: number; ly: number; ry: number }> {
     return this.repCounter.getRepEvents();
+  }
+
+  /** Get dense pose samples for server-side rep count replay */
+  getPoseSamples() {
+    return this.repCounter.getPoseSamples();
   }
   
   getLastResults(): Results | null {

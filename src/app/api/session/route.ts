@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSessionToken } from '@/lib/jwt';
+import { checkRateLimit, createRateLimitKey } from '@/lib/rate-limit';
 import { MIN_CUSTOM_DURATION, MAX_CUSTOM_DURATION, DURATION_67_REPS } from '@/types/game';
 
 export async function POST(request: NextRequest) {
@@ -21,6 +22,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: `duration_ms must be ${DURATION_67_REPS} (67 reps mode) or between ${MIN_CUSTOM_DURATION}ms and ${MAX_CUSTOM_DURATION}ms` },
         { status: 400 }
+      );
+    }
+
+    // Rate limit session creation: 1 token per 30 seconds per IP
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ||
+               request.headers.get('x-real-ip') ||
+               'unknown';
+    const rateLimit = checkRateLimit(createRateLimitKey(ip, 'session'), { windowMs: 30000, maxRequests: 1 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: `Too many session requests. Try again in ${rateLimit.retryAfter} seconds` },
+        { status: 429 }
       );
     }
 

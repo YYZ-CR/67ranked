@@ -3,13 +3,13 @@ import { verifySessionToken, validateSubmissionTiming } from '@/lib/jwt';
 import { validateUsername } from '@/lib/profanity';
 import { checkRateLimit, createRateLimitKey } from '@/lib/rate-limit';
 import { createServerClient } from '@/lib/supabase/server';
-import { parseRepEvents, validateTimedRepEvents, validate67RepsEvents } from '@/lib/validation';
+import { parsePoseSamples, validatePoseSamples } from '@/lib/validation';
 import { DURATION_6_7S, DURATION_20S, DURATION_67_REPS, is67RepsMode } from '@/types/game';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { token, username, score, repEvents: rawRepEvents } = body;
+    const { token, username, score, poseSamples: rawPoseSamples } = body;
 
     // Validate required fields
     if (!token || typeof token !== 'string') {
@@ -24,10 +24,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Score must be a non-negative integer' }, { status: 400 });
     }
 
-    // Parse and validate rep events
-    const repEvents = parseRepEvents(rawRepEvents);
-    if (!repEvents) {
-      return NextResponse.json({ error: 'Invalid or missing rep events' }, { status: 400 });
+    // Parse pose samples
+    const poseSamples = parsePoseSamples(rawPoseSamples);
+    if (!poseSamples) {
+      return NextResponse.json({ error: 'Invalid or missing pose samples' }, { status: 400 });
     }
 
     // Validate username
@@ -49,26 +49,19 @@ export async function POST(request: NextRequest) {
 
     // For 67 reps mode, we have different timing validation (no fixed duration)
     const is67Reps = is67RepsMode(payload.duration_ms);
-    
+
     if (!is67Reps) {
       // Validate timing for timed modes
-    const timingValidation = validateSubmissionTiming(payload, Date.now());
-    if (!timingValidation.valid) {
-      return NextResponse.json({ error: timingValidation.reason }, { status: 400 });
+      const timingValidation = validateSubmissionTiming(payload, Date.now());
+      if (!timingValidation.valid) {
+        return NextResponse.json({ error: timingValidation.reason }, { status: 400 });
       }
     }
 
-    // Validate rep events against the claimed score
-    if (is67Reps) {
-      const repValidation = validate67RepsEvents(repEvents, score);
-      if (!repValidation.valid) {
-        return NextResponse.json({ error: repValidation.reason }, { status: 400 });
-      }
-    } else {
-      const repValidation = validateTimedRepEvents(repEvents, score, payload.duration_ms);
-      if (!repValidation.valid) {
-        return NextResponse.json({ error: repValidation.reason }, { status: 400 });
-      }
+    // Server-side rep count replay: verify client score against server-computed count
+    const poseSampleValidation = validatePoseSamples(poseSamples, score, payload.duration_ms);
+    if (!poseSampleValidation.valid) {
+      return NextResponse.json({ error: poseSampleValidation.reason }, { status: 400 });
     }
 
     // Only allow leaderboard submissions for standard durations
@@ -94,17 +87,44 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert score into database
+    // Statistical outlier detection — auto-flag scores > mean + 3*stddev
+    // Requires at least 10 existing legitimate scores for the duration
+    const supabase = createServerClient();
+    let flagged = false;
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: recentScores } = await supabase
+      .from('scores')
+      .select('score')
+      .eq('duration_ms', payload.duration_ms)
+      .eq('flagged', false)
+      .gte('created_at', thirtyDaysAgo);
+
+    if (recentScores && recentScores.length >= 10) {
+      const values = recentScores.map(s => s.score);
+      const scoreMean = values.reduce((a, b) => a + b, 0) / values.length;
+      const scoreStddev = Math.sqrt(
+        values.map(v => (v - scoreMean) ** 2).reduce((a, b) => a + b, 0) / values.length
+      );
+      // For 67-reps mode, lower is better so flag unusually low times
+      if (is67Reps) {
+        if (score < scoreMean - 3 * scoreStddev) flagged = true;
+      } else {
+        if (score > scoreMean + 3 * scoreStddev) flagged = true;
+      }
+    }
+
+    // Insert score into database
     // For 67 reps mode, score is elapsed time in ms
     // For timed modes, score is rep count
     // session_id enforces single-use tokens (unique constraint in DB)
-    const supabase = createServerClient();
     const { data, error: dbError } = await supabase
       .from('scores')
       .insert({
         username,
         score,
         duration_ms: payload.duration_ms,
-        session_id: payload.session_id
+        session_id: payload.session_id,
+        flagged
       })
       .select('id')
       .single();
@@ -118,22 +138,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to save score' }, { status: 500 });
     }
 
-    // Calculate ranks and percentile
+    // Calculate ranks and percentile (excluding flagged scores from all counts)
     // is67Reps is already defined earlier in the function
-    
-    // Get total count for all-time
+
+    // Get total count for all-time (excluding flagged)
     const { count: totalCount } = await supabase
       .from('scores')
       .select('*', { count: 'exact', head: true })
-      .eq('duration_ms', payload.duration_ms);
+      .eq('duration_ms', payload.duration_ms)
+      .eq('flagged', false);
 
-    // Get all-time rank (count of better scores + 1)
+    // Get all-time rank (count of better non-flagged scores + 1)
     let allTimeRank = 1;
     if (is67Reps) {
       const { count: betterScores } = await supabase
         .from('scores')
         .select('*', { count: 'exact', head: true })
         .eq('duration_ms', payload.duration_ms)
+        .eq('flagged', false)
         .lt('score', score);
       allTimeRank = (betterScores || 0) + 1;
     } else {
@@ -141,11 +163,12 @@ export async function POST(request: NextRequest) {
         .from('scores')
         .select('*', { count: 'exact', head: true })
         .eq('duration_ms', payload.duration_ms)
+        .eq('flagged', false)
         .gt('score', score);
       allTimeRank = (betterScores || 0) + 1;
     }
 
-    // Get daily rank (past 24 hours)
+    // Get daily rank (past 24 hours, excluding flagged)
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     let dailyRank = 1;
     if (is67Reps) {
@@ -153,6 +176,7 @@ export async function POST(request: NextRequest) {
         .from('scores')
         .select('*', { count: 'exact', head: true })
         .eq('duration_ms', payload.duration_ms)
+        .eq('flagged', false)
         .gte('created_at', twentyFourHoursAgo)
         .lt('score', score);
       dailyRank = (betterDailyScores || 0) + 1;
@@ -161,6 +185,7 @@ export async function POST(request: NextRequest) {
         .from('scores')
         .select('*', { count: 'exact', head: true })
         .eq('duration_ms', payload.duration_ms)
+        .eq('flagged', false)
         .gte('created_at', twentyFourHoursAgo)
         .gt('score', score);
       dailyRank = (betterDailyScores || 0) + 1;

@@ -369,7 +369,7 @@ export default function DuelPage() {
           body: JSON.stringify({
             token: sessionTokenRef.current,
             score,
-            repEvents: trackerRef.current?.getRepEvents() || []
+            poseSamples: trackerRef.current?.getPoseSamples() || []
           })
         });
 
