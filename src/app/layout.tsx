@@ -15,15 +15,70 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+const APP_URL = "https://67ranked.com";
+
 export const metadata: Metadata = {
-  title: "67Ranked - Hand Motion Game",
-  description: "Count 67 reps as fast as you can! A camera-based hand-motion game where players compete on the leaderboard.",
-  keywords: ["game", "hand tracking", "leaderboard", "competition", "mediapipe"],
-  authors: [{ name: "67Ranked" }],
+  title: {
+    default: "67Ranked - the viral 67 game",
+    template: "%s | 67Ranked",
+  },
+  description:
+    "Play 67Ranked: 67 against the best in the world and duel your friends in 3 gamemodes",
+  keywords: [
+    "67 game",
+    "67game",
+    "67 speed",
+    "67 challenge",
+    "67speed",
+    "67 ranked",
+    "67ranked",
+    "67 rep challenge",
+    "hand tracking game",
+    "camera game",
+    "speed challenge game",
+    "rep counter game",
+    "fitness game",
+    "leaderboard game",
+    "browser game",
+  ],
+  authors: [{ name: "67Ranked", url: APP_URL }],
+  creator: "67Ranked",
+  metadataBase: new URL(APP_URL),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
-    title: "67Ranked - Hand Motion Game",
-    description: "Count 67 reps as fast as you can!",
+    title: "67Ranked - the viral 67 game",
+    description:
+      "Play 67Ranked: 67 against the best in the world and duel your friends in 3 gamemodes",
+    url: APP_URL,
+    siteName: "67Ranked",
     type: "website",
+    images: [
+      {
+        url: "/api/og",
+        width: 1200,
+        height: 630,
+        alt: "67Ranked – The 67 Speed Game",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "67Ranked - the viral 67 game",
+    description:
+      "Play 67Ranked: 67 against the best in the world and duel your friends in 3 gamemodes",
+    images: ["/api/og"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 
@@ -40,8 +95,29 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "67Ranked",
+    alternateName: ["67 Game", "67game", "67 Speed Challenge", "67speed", "67 Challenge"],
+    url: "https://67ranked.com",
+    description:
+      "The original 67 game — count 67 reps as fast as possible using your webcam. Compete in the 67 speed challenge on the global leaderboard or duel friends in real-time.",
+    applicationCategory: "GameApplication",
+    genre: "Sports & Fitness Game",
+    operatingSystem: "Web Browser",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    aggregateRating: { "@type": "AggregateRating", ratingValue: "5", ratingCount: "1" },
+  };
+
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className="antialiased bg-bg-primary font-sans">
         {children}
         <LegalFooter />
